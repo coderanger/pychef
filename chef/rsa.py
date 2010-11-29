@@ -1,6 +1,12 @@
+import sys
 from ctypes import *
 
-_eay = CDLL('libeay32.dll')
+if sys.platform == 'nt':
+    _eay = CDLL('libeay32.dll')
+elif sys.platform == 'darwin':
+    _eay = CDLL('libcrypto.dylib')
+else:
+    _eay = CDLL('libcrypto.so')
 
 class SSLError(Exception):
     """An error in OpenSSL."""

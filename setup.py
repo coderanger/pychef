@@ -29,4 +29,6 @@ setup(
         'Programming Language :: Python',
     ],
     zip_safe = False,
+    tests_require = ['unittest2'],
+    test_suite = 'unittest2.collector',
 )

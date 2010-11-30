@@ -117,25 +117,20 @@ def autodiscover(base_path=None):
     # Scan up the tree for a knife.rb or client.rb. If that fails try looking
     # in /etc/chef. The /etc/chef check will never work in Win32, but it doesn't
     # hurt either.
-    for path in itertools.chain(walk_backwards(base_path), 
-                                (os.path.join(os.path.sep, 'etc', 'chef'),)):
-        config_path = os.path.join(path, 'knife.rb')
-        api = ChefAPI.from_config_file(config_path)
-        if api is not None:
-            return api
-
+    for path in walk_backwards(base_path):
         config_path = os.path.join(path, '.chef', 'knife.rb')
-        api = ChefAPI.from_config_file(config_path)
-        if api is not None:
-            return api
-
-        config_path = os.path.join(path, 'client.rb')
         api = ChefAPI.from_config_file(config_path)
         if api is not None:
             return api
 
     # The walk didn't work, try ~/.chef/knife.rb
     config_path = os.path.expanduser(os.path.join('~', '.chef', 'knife.rb'))
+    api = ChefAPI.from_config_file(config_path)
+    if api is not None:
+        return api
+
+    # Nothing in the home dir, try /etc/chef/client.rb
+    config_path = os.path.join(os.path.sep, 'etc', 'chef')
     api = ChefAPI.from_config_file(config_path)
     if api is not None:
         return api

@@ -7,10 +7,6 @@ class NodeAttributeTestCase(TestCase):
     def test_getitem(self):
         attrs = NodeAttributes([{'a': 1}])
         self.assertEqual(attrs['a'], 1)
-        
-    def test_getattr(self):
-        attrs = NodeAttributes([{'a': 1}])
-        self.assertEqual(attrs.a, 1)
     
     def test_setitem(self):
         data = {'a': 1}
@@ -19,25 +15,14 @@ class NodeAttributeTestCase(TestCase):
         self.assertEqual(attrs['a'], 2)
         self.assertEqual(data['a'], 2)
 
-    def test_setattr(self):
-        data = {'a': 1}
-        attrs = NodeAttributes([data], write=data)
-        attrs.a = 2
-        self.assertEqual(attrs['a'], 2)
-        self.assertEqual(data['a'], 2)
-
     def test_getitem_nested(self):
          attrs = NodeAttributes([{'a': {'b': 1}}])
          self.assertEqual(attrs['a']['b'], 1)
-
-    def test_getattr_nested(self):
-         attrs = NodeAttributes([{'a': {'b': 1}}])
-         self.assertEqual(attrs.a.b, 1)
     
     def test_set_nested(self):
         data = {'a': {'b': 1}}
         attrs = NodeAttributes([data], write=data)
-        attrs.a.b = 2
+        attrs['a']['b'] = 2
         self.assertEqual(attrs['a']['b'], 2)
         self.assertEqual(data['a']['b'], 2)
     

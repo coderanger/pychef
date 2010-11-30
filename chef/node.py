@@ -4,9 +4,9 @@ from chef.exceptions import ChefError
 class NodeAttributes(object):
     
     def __init__(self, search_path, path=None, write=None):
-        object.__setattr__(self, 'search_path', search_path)
-        object.__setattr__(self, 'path', path or ())
-        object.__setattr__(self, 'write', write)
+        self.search_path = search_path
+        self.path = path or ()
+        self.write = write
     
     def __getitem__(self, key):
         for d in self.search_path:
@@ -33,12 +33,6 @@ class NodeAttributes(object):
         for path_key in self.path:
             dest = dest.setdefault(path_key, {})
         dest[key] = value
-
-    def __getattr__(self, key):
-        return self[key]
-    
-    def __setattr__(self, key, value):
-        self[key] = value
 
 
 class Node(object):

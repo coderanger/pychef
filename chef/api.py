@@ -1,7 +1,6 @@
 import copy
 import datetime
 import itertools
-import json
 import logging
 import os
 import socket
@@ -11,11 +10,25 @@ import urlparse
 
 from chef.auth import sign_request
 from chef.rsa import Key
-from chef.utils import walk_backwards
+from chef.utils import json
+from chef.utils.file import walk_backwards
 
 api_stack = threading.local()
 api_stack.value = []
 log = logging.getLogger('chef.api')
+
+class ChefRequest(urllib2.Request):
+    """Workaround for using PUT/DELETE with urllib2."""
+    def __init__(self, *args, **kwargs):
+        self._method = kwargs.pop('method', None)
+        # Request is an old-style class, no super() allowed.
+        urllib2.Request.__init__(self, *args, **kwargs)
+
+    def get_method(self):
+        if self._method:
+            return self._method
+        return urllib2.Request.get_method(self)
+
 
 class ChefAPI(object):
     """A model for a Chef API server."""
@@ -95,8 +108,12 @@ class ChefAPI(object):
             timestamp=datetime.datetime.utcnow(), user_id=self.client)
         headers = copy.copy(headers)
         headers.update(auth_headers)
-        request = urllib2.Request(self.url+path, data, headers)
-        response = urllib2.urlopen(request).read()
+        request = ChefRequest(self.url+path, data, headers, method=method)
+        try:
+            response = urllib2.urlopen(request).read()
+        except urllib2.HTTPError, e:
+            print e.read()
+            raise
         return response
     
     def api_request(self, method, path, headers={}, data=None):    

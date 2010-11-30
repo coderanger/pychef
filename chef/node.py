@@ -33,6 +33,25 @@ class NodeAttributes(object):
         for path_key in self.path:
             dest = dest.setdefault(path_key, {})
         dest[key] = value
+    
+    def to_dict(self):
+        merged = {}
+        for d in reversed(self.search_path):
+            merged.update(d)
+        return merged
+        
+
+class _NodeDelayedAttr(object):
+    """Descriptor that calls ._populate() before access to implement lazy loading."""
+    
+    def __init__(self, attr):
+        self.attr = attr
+    
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        instance._populate()
+        return getattr(instance, '_'+self.attr)
 
 
 class Node(object):
@@ -49,6 +68,10 @@ class Node(object):
         for name, url in api['/nodes'].iteritems():
             yield cls(name, api=api)
     
+    def save(self, api=None):
+        api = api or ChefAPI.get_global()
+        api.api_request('PUT', '/nodes/'+self.name, data=self)
+            
     def __getitem__(self, key):
         self._populate()
         return self._attributes[key]
@@ -66,7 +89,29 @@ class Node(object):
         self._override = NodeAttributes((data['override'],))
         self._automatic = NodeAttributes((data['automatic'],))
         self._attributes = NodeAttributes((data['automatic'], data['override'], data['normal'], data['default']), write=data['normal'])
+        self._run_list = data['run_list']
         self._populated = True
+    
+    # Lazy attributes
+    default = _NodeDelayedAttr('default')
+    normal = _NodeDelayedAttr('normal')
+    override = _NodeDelayedAttr('override')
+    automatic = _NodeDelayedAttr('automatic')
+    attributes = _NodeDelayedAttr('attributes')
+    run_list = _NodeDelayedAttr('run_list')
+    
+    def to_dict(self):
+        """Convert to a dict in the same format as Chef::Node.to_json()."""
+        return {
+            'name': self.name,
+            'json_class': 'Chef::Node',
+            'automatic': self.automatic.to_dict(),
+            'normal': self.normal.to_dict(),
+            'chef_type': 'node',
+            'default': self.default.to_dict(),
+            'override': self.override.to_dict(),
+            'run_list': self.run_list,
+        }
     
     def __repr__(self):
         return '<Node %s>'%self.name

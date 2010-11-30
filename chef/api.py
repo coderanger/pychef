@@ -111,7 +111,7 @@ class ChefAPI(object):
     def __getitem__(self, path):
         return self.api_request('GET', path)
 
-def autodiscover(base_path=None):
+def autoconfigure(base_path=None):
     """Try to find a Knife or chef-client config file to load parameters from."""
     base_path = base_path or os.getcwd()
     # Scan up the tree for a knife.rb or client.rb. If that fails try looking

@@ -1,7 +1,7 @@
 import sys
 from ctypes import *
 
-if sys.platform == 'nt':
+if sys.platform == 'win32' or sys.platform == 'cygwin':
     _eay = CDLL('libeay32.dll')
 elif sys.platform == 'darwin':
     _eay = CDLL('libcrypto.dylib')

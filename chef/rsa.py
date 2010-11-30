@@ -84,5 +84,5 @@ class Key(object):
         return output.raw[:ret]
     
     def __del__(self):
-        if self.key:
+        if self.key and RSA_free:
             RSA_free(self.key)

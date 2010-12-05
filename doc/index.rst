@@ -1,3 +1,7 @@
 PyChef
 ======
 
+.. toctree::
+    
+    auth
+    

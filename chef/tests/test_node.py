@@ -2,6 +2,7 @@ from unittest2 import TestCase
 
 from chef.exceptions import ChefError
 from chef.node import NodeAttributes
+from chef.test import ChefTestCase
 
 class NodeAttributeTestCase(TestCase):
     def test_getitem(self):

@@ -4,3 +4,5 @@
 class ChefError(Exception):
     """Top-level Chef error."""
 
+class ChefServerError(ChefError):
+    """An error from a Chef server."""

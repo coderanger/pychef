@@ -71,7 +71,11 @@ class Node(object):
     def save(self, api=None):
         api = api or ChefAPI.get_global()
         api.api_request('PUT', '/nodes/'+self.name, data=self)
-            
+    
+    def delete(self, api=None):
+        api = api or ChefAPI.get_global()
+        api.api_request('DELETE', '/nodes/'+self.name)
+
     def __getitem__(self, key):
         self._populate()
         return self._attributes[key]

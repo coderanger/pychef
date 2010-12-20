@@ -64,15 +64,15 @@ def sign_request(key, http_method, path, body, host, timestamp, user_id):
     
     # Simple headers
     headers = {
-        'X-Ops-Sign': 'version=1.0',
-        'X-Ops-Userid': user_id,
-        'X-Ops-Timestamp': timestamp,
-        'X-Ops-Content-Hash': hashed_body,
+        'x-ops-sign': 'version=1.0',
+        'x-ops-userid': user_id,
+        'x-ops-timestamp': timestamp,
+        'x-ops-content-hash': hashed_body,
     }
     
     # Create RSA signature
     req = canonical_request(http_method, path, hashed_body, timestamp, user_id)
     sig = _ruby_b64encode(key.encrypt(req))
     for i, line in enumerate(sig):
-        headers['X-Ops-Authorization-%s'%(i+1)] = line
+        headers['x-ops-authorization-%s'%(i+1)] = line
     return headers

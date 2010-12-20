@@ -7,8 +7,10 @@ import socket
 import threading
 import urllib2
 import urlparse
+import weakref
 
 from chef.auth import sign_request
+from chef.exceptions import ChefServerError
 from chef.rsa import Key
 from chef.utils import json
 from chef.utils.file import walk_backwards
@@ -33,11 +35,12 @@ class ChefRequest(urllib2.Request):
 class ChefAPI(object):
     """A model for a Chef API server."""
     
-    def __init__(self, url, key, client):
+    def __init__(self, url, key, client, version='0.9.12'):
         self.url = url.rstrip('/')
         self.parsed_url = urlparse.urlparse(self.url)
         self.key = Key(key)
         self.client = client
+        self.version = version
         if not api_stack.value:
             self.set_default()
     
@@ -84,19 +87,22 @@ class ChefAPI(object):
     @staticmethod
     def get_global():
         """Return the API on the top of the stack."""
-        if api_stack.value:
-            return api_stack.value[-1]
+        while api_stack.value:
+            api = api_stack.value[-1]()
+            if api is not None:
+                return api
+            del api_stack.value[-1]
     
     def set_default(self):
         """Make this the default API in the stack. Returns the old default if any."""
         old = None
         if api_stack.value:
             old = api_stack.value.pop(0)
-        api_stack.value.insert(0, self)
+        api_stack.value.insert(0, weakref.ref(self))
         return old
     
     def __enter__(self):
-        api_stack.value.append(self)
+        api_stack.value.append(weakref.ref(self))
         return self
     
     def __exit__(self, type, value, traceback):
@@ -106,21 +112,27 @@ class ChefAPI(object):
         auth_headers = sign_request(key=self.key, http_method=method,
             path=self.parsed_url.path+path, body=data, host=self.parsed_url.netloc,
             timestamp=datetime.datetime.utcnow(), user_id=self.client)
-        headers = copy.copy(headers)
+        headers = dict((k.lower(), v) for k, v in headers.iteritems())
+        headers['x-chef-version'] = self.version
         headers.update(auth_headers)
         request = ChefRequest(self.url+path, data, headers, method=method)
         try:
             response = urllib2.urlopen(request).read()
         except urllib2.HTTPError, e:
-            print e.read()
+            err = e.read()
+            try:
+                err = json.loads(err)
+                raise ChefServerError(err['error'])
+            except ValueError:
+                pass
             raise
         return response
     
     def api_request(self, method, path, headers={}, data=None):    
-        headers = copy.copy(headers)
-        headers['Accept'] = 'application/json'
+        headers = dict((k.lower(), v) for k, v in headers.iteritems())
+        headers['accept'] = 'application/json'
         if data is not None:
-            headers['Content-Type'] = 'application/json'
+            headers['content-type'] = 'application/json'
             data = json.dumps(data)
         response = self.request(method, path, headers, data)
         return json.loads(response)

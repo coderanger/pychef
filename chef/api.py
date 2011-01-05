@@ -122,7 +122,7 @@ class ChefAPI(object):
             err = e.read()
             try:
                 err = json.loads(err)
-                raise ChefServerError(err['error'])
+                raise ChefServerError(err['error'], code=e.code)
             except ValueError:
                 pass
             raise

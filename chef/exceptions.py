@@ -6,7 +6,8 @@ class ChefError(Exception):
 
 class ChefServerError(ChefError):
     """An error from a Chef server. May include a HTTP response code."""
+
     def __init__(self, message, code=None):
-        ChefError.__init__(self, message)
+        super(ChefError, self).__init__(message)
         self.code = code
-        
+

@@ -2,3 +2,4 @@
 from chef.api import ChefAPI, autoconfigure
 from chef.exceptions import ChefError
 from chef.node import Node
+from chef.role import Role

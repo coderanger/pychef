@@ -1,4 +1,5 @@
 import os
+import random
 
 from unittest2 import TestCase
 
@@ -17,3 +18,6 @@ class ChefTestCase(TestCase):
         super(ChefTestCase, self).setUp()
         self.api = test_chef_api
         self.api.set_default()
+
+    def random(self, length=8, alphabet='0123456789abcdef'):
+        return ''.join(random.choice(alphabet) for _ in xrange(length))

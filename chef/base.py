@@ -74,3 +74,13 @@ class ChefObject(object):
         data = self.api[self.url]
         for attr in self.__class__.attributes:
             setattr(self, '_'+attr, data[attr])
+
+    def to_dict(self):
+        d = {
+            'name': self.name,
+            'json_class': 'Chef::'+self.__class__.__name__,
+            'chef_type': self.__class__.__name__.lower(),
+        }
+        for attr in self.__class__.attributes:
+            d[attr] = getattr(self, attr)
+        return d

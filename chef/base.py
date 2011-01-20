@@ -31,10 +31,12 @@ class ChefObject(object):
     url = ''
     attributes = []
 
-    def __init__(self, name, api=None):
+    def __init__(self, name, api=None, lazy=True):
         self.name = name
         self.api = api or ChefAPI.get_global()
         self.url = self.__class__.url + '/' + self.name
+        if not lazy:
+            self._populate()
 
     @classmethod
     def list(cls, api=None):

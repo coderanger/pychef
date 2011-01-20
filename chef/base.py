@@ -44,6 +44,15 @@ class ChefObject(object):
         for name, url in api[cls.url].iteritems():
             yield cls(name, api=api)
 
+    @classmethod
+    def create(cls, name, api=None, **kwargs):
+        api = api or ChefAPI.get_global()
+        obj = cls(name, api)
+        for key, value in kwargs.iteritems():
+            setattr(obj, key, value)
+        api.api_request('POST', cls.url, data=obj)
+        return obj
+
     def save(self, api=None):
         api = api or ChefAPI.get_global()
         api.api_request('PUT', self.url, data=self)

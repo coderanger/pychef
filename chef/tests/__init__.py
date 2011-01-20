@@ -16,7 +16,7 @@ class ChefTestCase(TestCase):
     
     def setUp(self):
         super(ChefTestCase, self).setUp()
-        self.api = test_chef_api
+        self.api = test_chef_api()
         self.api.set_default()
 
     def random(self, length=8, alphabet='0123456789abcdef'):

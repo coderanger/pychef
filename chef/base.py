@@ -1,4 +1,5 @@
 from chef.api import ChefAPI
+from chef.exceptions import ChefServerError
 
 class DelayedAttribute(object):
     """Descriptor that calls ._populate() before access to implement lazy loading."""
@@ -55,7 +56,15 @@ class ChefObject(object):
 
     def save(self, api=None):
         api = api or ChefAPI.get_global()
-        api.api_request('PUT', self.url, data=self)
+        try:
+            api.api_request('PUT', self.url, data=self)
+        except ChefServerError, e:
+            if e.code == 404:
+                # If you get a 404 during a save, just create it instead
+                # This mirrors the logic in the Chef code
+                api.api_request('POST', self.__class__.url, data=self)
+            else:
+                raise
 
     def delete(self, api=None):
         api = api or ChefAPI.get_global()

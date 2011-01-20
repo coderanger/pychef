@@ -34,10 +34,7 @@ class ChefObject(object):
     def __init__(self, name, api=None):
         self.name = name
         self.api = api or ChefAPI.get_global()
-
-    @property
-    def url(self):
-        return self.__class__.url + '/' + self.name
+        self.url = self.__class__.url + '/' + self.name
 
     @classmethod
     def list(cls, api=None):

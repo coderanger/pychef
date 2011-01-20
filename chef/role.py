@@ -6,5 +6,6 @@ class Role(ChefObject):
     url = '/roles'
     attributes = [
         'description',
+        'run_list',
     ]
 

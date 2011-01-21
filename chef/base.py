@@ -1,54 +1,64 @@
-from chef.api import ChefAPI
+import collections
 
-class DelayedAttribute(object):
-    """Descriptor that calls ._populate() before access to implement lazy loading."""
+from chef.api import ChefAPI
 from chef.exceptions import ChefServerNotFoundError
 
-    def __init__(self, attr):
-        self.attr = attr
+class ChefQuery(collections.Mapping):
+    def __init__(self, obj_class, names, api):
+        self.obj_class = obj_class
+        self.names = names
+        self.api = api
 
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        if not getattr(instance, '_populated', False):
-            instance._populate()
-            instance._populated = True
-        return getattr(instance, '_'+self.attr)
+    def __len__(self):
+        return len(self.names)
 
+    def __contains__(self, key):
+        return key in self.names
 
-class ChefObjectMeta(type):
-    """Metaclass for ChefObject to implement lazy attributes."""
+    def __iter__(self):
+        return iter(self.names)
 
-    def __init__(cls, name, bases, d):
-        for attr in cls.attributes:
-            setattr(cls, attr, DelayedAttribute(attr))
+    def __getitem__(self, name):
+        if name not in self:
+            raise KeyError('%s not found'%name)
+        return self.obj_class(name, api=self.api)
 
 
 class ChefObject(object):
     """A base class for Chef API objects."""
 
-    __metaclass__ = ChefObjectMeta
-
     url = ''
-    attributes = []
+    attributes = {}
 
-    def __init__(self, name, api=None, lazy=True):
+    def __init__(self, name, api=None, skip_load=False):
         self.name = name
         self.api = api or ChefAPI.get_global()
         self.url = self.__class__.url + '/' + self.name
-        if not lazy:
-            self._populate()
+        self.exists = False
+        if not skip_load:
+            try:
+                data = self.api[self.url]
+            except ChefServerNotFoundError:
+                pass
+            else:
+                self.exists = True
+        for name, cls in self.__class__.attributes.iteritems():
+            if self.exists:
+                value = cls(data[name])
+            else:
+                value = cls()
+            setattr(self, name, value)
 
     @classmethod
     def list(cls, api=None):
         api = api or ChefAPI.get_global()
-        for name, url in api[cls.url].iteritems():
-            yield cls(name, api=api)
+        names = [name for name, url in api[cls.url].iteritems()]
+        return ChefQuery(cls, names, api)
 
     @classmethod
     def create(cls, name, api=None, **kwargs):
         api = api or ChefAPI.get_global()
-        obj = cls(name, api)
+        obj = cls(name, api, skip_load=True)
         for key, value in kwargs.iteritems():
             setattr(obj, key, value)
         api.api_request('POST', cls.url, data=obj)
@@ -67,17 +77,12 @@ class ChefObject(object):
         api = api or ChefAPI.get_global()
         api.api_request('DELETE', self.url)
 
-    def _populate(self):
-        data = self.api[self.url]
-        for attr in self.__class__.attributes:
-            setattr(self, '_'+attr, data[attr])
-
     def to_dict(self):
         d = {
             'name': self.name,
             'json_class': 'Chef::'+self.__class__.__name__,
             'chef_type': self.__class__.__name__.lower(),
         }
-        for attr in self.__class__.attributes:
+        for attr in self.__class__.attributes.iterkeys():
             d[attr] = getattr(self, attr)
         return d

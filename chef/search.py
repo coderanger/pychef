@@ -3,16 +3,30 @@ import copy
 import urllib
 
 from chef.api import ChefAPI
-from chef.base import ChefQuery
+from chef.base import ChefQuery, ChefObject
 from chef.exceptions import ChefError
 
 class SearchRow(dict):
     """A single row in a search result."""
 
+    def __init__(self, row, api):
+        super(SearchRow, self).__init__(row)
+        self.api = api
+
     @property
     def object(self):
-        pass
-        # Not yet
+        # Decode Chef class name
+        chef_class = self.get('json_class', '')
+        if chef_class.startswith('Chef::'):
+            chef_class = chef_class[6:]
+        cls = ChefObject.types.get(chef_class.lower())
+        if not cls:
+            raise ValueError('Unknown class %s'%chef_class)
+        obj = cls(self.get('name'), api=self.api, skip_load=True)
+        obj.exists = True
+        obj._populate(self)
+        return obj
+
 
 class Search(collections.Sequence):
     """A search of the Chef index."""
@@ -65,7 +79,7 @@ class Search(collections.Sequence):
             if i.step is not None and i.step != 1:
                 raise ValueError('Cannot use a step other than 1')
             return self.start(self._args['start']+i.start).rows(i.stop-i.start)
-        return SearchRow(self.data['rows'][i])
+        return SearchRow(self.data['rows'][i], self.api)
 
     def __contains__(self, name):
         for row in self:

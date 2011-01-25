@@ -23,4 +23,4 @@ class JSONEncoder(json.JSONEncoder):
         return super(JSONEncoder, self).default(obj)
 
 loads = json.loads
-dumps = lambda obj: json.dumps(obj, cls=JSONEncoder)
+dumps = lambda obj, **kwargs: json.dumps(obj, cls=JSONEncoder, **kwargs)

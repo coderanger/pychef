@@ -35,6 +35,7 @@ class ChefObject(object):
         self.api = api or ChefAPI.get_global()
         self.url = self.__class__.url + '/' + self.name
         self.exists = False
+        data = {}
         if not skip_load:
             try:
                 data = self.api[self.url]
@@ -42,6 +43,9 @@ class ChefObject(object):
                 pass
             else:
                 self.exists = True
+        self._populate(data)
+
+    def _populate(self, data):
         for name, cls in self.__class__.attributes.iteritems():
             if self.exists:
                 value = cls(data[name])

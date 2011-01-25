@@ -110,8 +110,9 @@ class ChefAPI(object):
     
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
-            path=self.parsed_url.path+path, body=data, host=self.parsed_url.netloc,
-            timestamp=datetime.datetime.utcnow(), user_id=self.client)
+            path=self.parsed_url.path+path.split('?', 1)[0], body=data,
+            host=self.parsed_url.netloc, timestamp=datetime.datetime.utcnow(),
+            user_id=self.client)
         headers = dict((k.lower(), v) for k, v in headers.iteritems())
         headers['x-chef-version'] = self.version
         headers.update(auth_headers)

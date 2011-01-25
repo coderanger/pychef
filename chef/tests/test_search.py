@@ -10,7 +10,7 @@ class SearchTestCase(ChefTestCase):
         self.assertIn('test_2', s)
         self.assertIn('test_3', s)
 
-    def test_search_role(self):
+    def test_search_query(self):
         s = Search('node', 'role:test_1')
         self.assertGreaterEqual(len(s), 2)
         self.assertIn('test_1', s)
@@ -22,3 +22,30 @@ class SearchTestCase(ChefTestCase):
         self.assertIn('node', searches)
         self.assertIn('role', searches)
 
+    def test_search_set_query(self):
+        s = Search('node').query('role:test_1')
+        self.assertGreaterEqual(len(s), 2)
+        self.assertIn('test_1', s)
+        self.assertNotIn('test_2', s)
+        self.assertIn('test_3', s)
+
+    def test_search_call(self):
+        s = Search('node')('role:test_1')
+        self.assertGreaterEqual(len(s), 2)
+        self.assertIn('test_1', s)
+        self.assertNotIn('test_2', s)
+        self.assertIn('test_3', s)
+
+    def test_search_sort(self):
+        s = Search('node', sort='name')
+        self.assertLess(s.index('test_1'), s.index('test_3'))
+
+    def test_search_sort_asc(self):
+        s = Search('node', sort='X_CHEF_id_CHEF_X asc')
+        self.assertLess(s.index('test_1'), s.index('test_3'))
+
+    def test_search_sort_desc(self):
+        s = Search('node', 'name:*', sort='name desc')
+        import pprint
+        pprint.pprint(s.data)
+        self.assertGreater(s.index('test_1'), s.index('test_3'))

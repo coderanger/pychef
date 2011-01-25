@@ -24,8 +24,18 @@ class ChefQuery(collections.Mapping):
         return self.obj_class(name, api=self.api)
 
 
+class ChefObjectMeta(type):
+    def __init__(cls, name, bases, d):
+        super(ChefObjectMeta, cls).__init__(name, bases, d)
+        if name != 'ChefObject':
+            ChefObject.types[name.lower()] = cls
+
+
 class ChefObject(object):
     """A base class for Chef API objects."""
+
+    __metaclass__ = ChefObjectMeta
+    types = {}
 
     url = ''
     attributes = {}

@@ -86,3 +86,6 @@ class ChefObject(object):
         for attr in self.__class__.attributes.iterkeys():
             d[attr] = getattr(self, attr)
         return d
+
+    def __repr__(self):
+        return '<%s %s>'%(type(self).__name__, self.name)

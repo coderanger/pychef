@@ -1,5 +1,6 @@
 from unittest2 import TestCase
 
+from chef import Node
 from chef.exceptions import ChefError
 from chef.node import NodeAttributes
 from chef.tests import ChefTestCase
@@ -41,3 +42,7 @@ class NodeAttributeTestCase(TestCase):
         attrs = NodeAttributes([{'a': 1}])
         with self.assertRaises(ChefError):
             attrs['a'] = 2
+
+class NodeTestCase(ChefTestCase):
+    def test_load(self):
+        node = Node('test_1')

@@ -1,13 +1,15 @@
-from chef.api import ChefAPI
+from chef.base import ChefObject
 from chef.exceptions import ChefError
 
 class NodeAttributes(object):
     
-    def __init__(self, search_path, path=None, write=None):
+    def __init__(self, search_path=[], path=None, write=None):
+        if not isinstance(search_path, list):
+            search_path = [search_path]
         self.search_path = search_path
         self.path = path or ()
         self.write = write
-    
+
     def __getitem__(self, key):
         for d in self.search_path:
             if key in d:
@@ -33,89 +35,39 @@ class NodeAttributes(object):
         for path_key in self.path:
             dest = dest.setdefault(path_key, {})
         dest[key] = value
-    
+
     def to_dict(self):
         merged = {}
         for d in reversed(self.search_path):
             merged.update(d)
         return merged
-        
-
-class _NodeDelayedAttr(object):
-    """Descriptor that calls ._populate() before access to implement lazy loading."""
-    
-    def __init__(self, attr):
-        self.attr = attr
-    
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        instance._populate()
-        return getattr(instance, '_'+self.attr)
 
 
-class Node(object):
+class Node(ChefObject):
     """A single Chef node."""
-    
-    def __init__(self, name, api=None):
-        self.name = name
-        self.api = api or ChefAPI.get_global()
-        self._populated = False
-    
-    @classmethod
-    def list(cls, api=None):
-        api = api or ChefAPI.get_global()
-        for name, url in api['/nodes'].iteritems():
-            yield cls(name, api=api)
-    
-    def save(self, api=None):
-        api = api or ChefAPI.get_global()
-        api.api_request('PUT', '/nodes/'+self.name, data=self)
-    
-    def delete(self, api=None):
-        api = api or ChefAPI.get_global()
-        api.api_request('DELETE', '/nodes/'+self.name)
+
+    url = '/nodes'
+    attributes = {
+        'default':NodeAttributes,
+        'normal': lambda d=None: NodeAttributes(d, write=d),
+        'override': NodeAttributes,
+        'automatic': NodeAttributes,
+        'run_list': list,
+    }
 
     def __getitem__(self, key):
-        self._populate()
         return self._attributes[key]
-    
+
     def __setitem__(self, key, value):
-        self._populate()
         self._attributes[key] = value
-    
-    def _populate(self):
-        if self._populated:
-            return
-        data = self.api['/nodes/'+self.name]
-        self._default = NodeAttributes((data['default'],))
-        self._normal = NodeAttributes((data['normal'],), write=data['normal'])
-        self._override = NodeAttributes((data['override'],))
-        self._automatic = NodeAttributes((data['automatic'],))
-        self._attributes = NodeAttributes((data['automatic'], data['override'], data['normal'], data['default']), write=data['normal'])
-        self._run_list = data['run_list']
-        self._populated = True
-    
-    # Lazy attributes
-    default = _NodeDelayedAttr('default')
-    normal = _NodeDelayedAttr('normal')
-    override = _NodeDelayedAttr('override')
-    automatic = _NodeDelayedAttr('automatic')
-    attributes = _NodeDelayedAttr('attributes')
-    run_list = _NodeDelayedAttr('run_list')
-    
-    def to_dict(self):
-        """Convert to a dict in the same format as Chef::Node.to_json()."""
-        return {
-            'name': self.name,
-            'json_class': 'Chef::Node',
-            'automatic': self.automatic.to_dict(),
-            'normal': self.normal.to_dict(),
-            'chef_type': 'node',
-            'default': self.default.to_dict(),
-            'override': self.override.to_dict(),
-            'run_list': self.run_list,
-        }
-    
-    def __repr__(self):
-        return '<Node %s>'%self.name
+
+    def _populate(self, data):
+        if not self.exists:
+            # Make this exist so the normal<->attributes cross-link will
+            # function correctly
+            data['normal'] = {}
+        super(Node, self)._populate(data)
+        self.attributes = NodeAttributes((data.get('automatic', {}),
+                                          data.get('override', {}),
+                                          data['normal'], # Must exist, see above
+                                          data.get('default', {})), write=data['normal'])

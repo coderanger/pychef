@@ -1,4 +1,4 @@
-from unittest2 import TestCase
+from unittest2 import TestCase, skip
 
 from chef import Node
 from chef.exceptions import ChefError
@@ -44,5 +44,24 @@ class NodeAttributeTestCase(TestCase):
             attrs['a'] = 2
 
 class NodeTestCase(ChefTestCase):
-    def test_load(self):
-        node = Node('test_1')
+    def setUp(self):
+        super(NodeTestCase, self).setUp()
+        self.node = Node('test_1')
+
+    @skip('default and override attrs from roles not being sent')
+    def test_default_attr(self):
+        self.assertEqual(self.node.default['test_attr'], 'default')
+
+    def test_normal_attr(self):
+        self.assertEqual(self.node.normal['test_attr'], 'normal')
+
+    @skip('default and override attrs from roles not being sent')
+    def test_override_attr(self):
+        self.assertEqual(self.node.override['test_attr'], 'override')
+
+    # Switch these back to override later
+    def test_composite_attr(self):
+        self.assertEqual(self.node.attributes['test_attr'], 'normal')
+
+    def test_getitem(self):
+        self.assertEqual(self.node['test_attr'], 'normal')

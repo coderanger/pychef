@@ -56,10 +56,10 @@ class Node(ChefObject):
     }
 
     def __getitem__(self, key):
-        return self._attributes[key]
+        return self.attributes[key]
 
     def __setitem__(self, key, value):
-        self._attributes[key] = value
+        self.attributes[key] = value
 
     def _populate(self, data):
         if not self.exists:

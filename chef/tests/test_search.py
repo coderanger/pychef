@@ -50,5 +50,37 @@ class SearchTestCase(ChefTestCase):
 
     @skip('sorting is being weird')
     def test_search_sort_desc(self):
-        s = Search('node', 'name:*', sort='name desc')
+        s = Search('node', sort='name desc')
         self.assertGreater(s.index('test_1'), s.index('test_3'))
+
+    def test_rows(self):
+        s = Search('node', rows=1)
+        self.assertEqual(len(s), 1)
+        self.assertGreaterEqual(s.total, 3)
+
+    def test_start(self):
+        s = Search('node', start=1)
+        self.assertEqual(len(s), s.total-1)
+        self.assertGreaterEqual(s.total, 3)
+
+    def test_slice(self):
+        s = Search('node')[1:2]
+        self.assertEqual(len(s), 1)
+        self.assertGreaterEqual(s.total, 3)
+
+        s2 = s[1:2]
+        self.assertEqual(len(s2), 1)
+        self.assertGreaterEqual(s2.total, 3)
+        self.assertNotEqual(s[0]['name'], s2[0]['name'])
+
+        s3 = Search('node')[2:3]
+        self.assertEqual(len(s3), 1)
+        self.assertGreaterEqual(s3.total, 3)
+        self.assertEqual(s2[0]['name'], s3[0]['name'])
+
+    def test_object(self):
+        s = Search('node', 'name:test_1')
+        self.assertEqual(len(s), 1)
+        node = s[0].object
+        self.assertEqual(node.name, 'test_1')
+        self.assertEqual(node.run_list, ['role[test_1]'])

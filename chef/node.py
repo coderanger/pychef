@@ -50,7 +50,7 @@ class Node(ChefObject):
 
     url = '/nodes'
     attributes = {
-        'default':NodeAttributes,
+        'default': NodeAttributes,
         'normal': lambda d=None: NodeAttributes(d, write=d),
         'override': NodeAttributes,
         'automatic': NodeAttributes,

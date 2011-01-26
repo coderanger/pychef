@@ -48,20 +48,18 @@ class NodeTestCase(ChefTestCase):
         super(NodeTestCase, self).setUp()
         self.node = Node('test_1')
 
-    @skip('default and override attrs from roles not being sent')
     def test_default_attr(self):
         self.assertEqual(self.node.default['test_attr'], 'default')
 
     def test_normal_attr(self):
         self.assertEqual(self.node.normal['test_attr'], 'normal')
 
-    @skip('default and override attrs from roles not being sent')
     def test_override_attr(self):
         self.assertEqual(self.node.override['test_attr'], 'override')
 
     # Switch these back to override later
     def test_composite_attr(self):
-        self.assertEqual(self.node.attributes['test_attr'], 'normal')
+        self.assertEqual(self.node.attributes['test_attr'], 'override')
 
     def test_getitem(self):
-        self.assertEqual(self.node['test_attr'], 'normal')
+        self.assertEqual(self.node['test_attr'], 'override')

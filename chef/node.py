@@ -12,13 +12,13 @@ class NodeAttributes(object):
         self.path = path or ()
         self.write = write
 
-    def __getitem__(self, key):
+    def get(self, key, default=None):
         for d in self.search_path:
             if key in d:
                 value = d[key]
                 break
         else:
-            raise KeyError(key)
+            return default
         if not isinstance(value, dict):
             return value
         new_search_path = []
@@ -29,6 +29,13 @@ class NodeAttributes(object):
                 new_d = {}
             new_search_path.append(new_d)
         return self.__class__(new_search_path, self.path+(key,), write=self.write)
+
+    def __getitem__(self, key):
+        token = object()
+        value = self.get(key, token)
+        if value is token:
+            raise KeyError(key)
+        return value
 
     def __setitem__(self, key, value):
         if self.write is None:
@@ -56,6 +63,9 @@ class Node(ChefObject):
         'automatic': NodeAttributes,
         'run_list': list,
     }
+
+    def get(self, key, default=None):
+        return self.attributes.get(key, default)
 
     def __getitem__(self, key):
         return self.attributes[key]

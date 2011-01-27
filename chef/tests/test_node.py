@@ -43,6 +43,19 @@ class NodeAttributeTestCase(TestCase):
         with self.assertRaises(ChefError):
             attrs['a'] = 2
 
+    def test_get(self):
+        attrs = NodeAttributes([{'a': 1}])
+        self.assertEqual(attrs.get('a'), 1)
+
+    def test_get_default(self):
+        attrs = NodeAttributes([{'a': 1}])
+        self.assertEqual(attrs.get('b'), None)
+
+    def test_getitem_keyerror(self):
+        attrs = NodeAttributes([{'a': 1}])
+        with self.assertRaises(KeyError):
+            attrs['b']
+
 class NodeTestCase(ChefTestCase):
     def setUp(self):
         super(NodeTestCase, self).setUp()

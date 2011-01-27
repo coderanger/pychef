@@ -3,7 +3,7 @@ import collections
 from chef.base import ChefObject
 from chef.exceptions import ChefError
 
-class NodeAttributes(object):
+class NodeAttributes(collections.MutableMapping):
     
     def __init__(self, search_path=[], path=None, write=None):
         if not isinstance(search_path, collections.Sequence):
@@ -12,13 +12,25 @@ class NodeAttributes(object):
         self.path = path or ()
         self.write = write
 
-    def get(self, key, default=None):
+    def __iter__(self):
+        keys = set()
+        for d in self.search_path:
+            keys |= set(d.iterkeys())
+        return iter(keys)
+
+    def __len__(self):
+        l = 0
+        for key in self:
+            l += 1
+        return l
+
+    def __getitem__(self, key):
         for d in self.search_path:
             if key in d:
                 value = d[key]
                 break
         else:
-            return default
+            raise KeyError(key)
         if not isinstance(value, dict):
             return value
         new_search_path = []
@@ -30,13 +42,6 @@ class NodeAttributes(object):
             new_search_path.append(new_d)
         return self.__class__(new_search_path, self.path+(key,), write=self.write)
 
-    def __getitem__(self, key):
-        token = object()
-        value = self.get(key, token)
-        if value is token:
-            raise KeyError(key)
-        return value
-
     def __setitem__(self, key, value):
         if self.write is None:
             raise ChefError('This attribute is not writable')
@@ -45,6 +50,14 @@ class NodeAttributes(object):
             dest = dest.setdefault(path_key, {})
         dest[key] = value
 
+    def __delitem__(self, key):
+        if self.write is None:
+            raise ChefError('This attribute is not writable')
+        dest = self.write
+        for path_key in self.path:
+            dest = dest.setdefault(path_key, {})
+        del dest[key]
+
     def get_dotted(self, key):
         value = self
         for k in key.split('.'):
@@ -52,6 +65,18 @@ class NodeAttributes(object):
                 raise KeyError(key)
             value = value[k]
         return value
+
+    def set_dotted(self, key, value):
+        dest = self
+        keys = key.split('.')
+        last_key = keys.pop()
+        for k in keys:
+            if k not in dest:
+                dest[k] = {}
+            dest = dest[k]
+            if not isinstance(dest, NodeAttributes):
+                raise ChefError
+        dest[last_key] = value
 
     def to_dict(self):
         merged = {}

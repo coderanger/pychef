@@ -56,6 +56,23 @@ class NodeAttributeTestCase(TestCase):
         with self.assertRaises(KeyError):
             attrs['b']
 
+    def test_iter(self):
+        attrs = NodeAttributes([{'a': 1, 'b': 2}])
+        self.assertEqual(set(attrs), set(['a', 'b']))
+
+    def test_iter2(self):
+        attrs = NodeAttributes([{'a': {'b': 1, 'c': 2}}])
+        self.assertEqual(set(attrs['a']), set(['b', 'c']))
+
+    def test_len(self):
+        attrs = NodeAttributes([{'a': 1, 'b': 2}])
+        self.assertEqual(len(attrs), 2)
+
+    def test_len2(self):
+        attrs = NodeAttributes([{'a': {'b': 1, 'c': 2}}])
+        self.assertEqual(len(attrs), 1)
+        self.assertEqual(len(attrs['a']), 2)
+
     def test_get_dotted(self):
         attrs = NodeAttributes([{'a': {'b': 1}}])
         self.assertEqual(attrs.get_dotted('a.b'), 1)
@@ -64,6 +81,22 @@ class NodeAttributeTestCase(TestCase):
         attrs = NodeAttributes([{'a': {'b': 1}}])
         with self.assertRaises(KeyError):
             attrs.get_dotted('a.b.c')
+
+    def test_set_dotted(self):
+        data = {'a': {'b': 1}}
+        attrs = NodeAttributes([data], write=data)
+        attrs.set_dotted('a.b', 2)
+        self.assertEqual(attrs['a']['b'], 2)
+        self.assertEqual(attrs.get_dotted('a.b'), 2)
+        self.assertEqual(data['a']['b'], 2)
+
+    def test_set_dotted2(self):
+        data = {'a': {'b': 1}}
+        attrs = NodeAttributes([data], write=data)
+        attrs.set_dotted('a.c.d', 2)
+        self.assertEqual(attrs['a']['c']['d'], 2)
+        self.assertEqual(attrs.get_dotted('a.c.d'), 2)
+        self.assertEqual(data['a']['c']['d'], 2)
 
 
 class NodeTestCase(ChefTestCase):

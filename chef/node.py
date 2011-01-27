@@ -45,6 +45,14 @@ class NodeAttributes(object):
             dest = dest.setdefault(path_key, {})
         dest[key] = value
 
+    def get_dotted(self, key):
+        value = self
+        for k in key.split('.'):
+            if not isinstance(value, NodeAttributes):
+                raise KeyError(key)
+            value = value[k]
+        return value
+
     def to_dict(self):
         merged = {}
         for d in reversed(self.search_path):

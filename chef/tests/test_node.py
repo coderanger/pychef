@@ -56,6 +56,16 @@ class NodeAttributeTestCase(TestCase):
         with self.assertRaises(KeyError):
             attrs['b']
 
+    def test_get_dotted(self):
+        attrs = NodeAttributes([{'a': {'b': 1}}])
+        self.assertEqual(attrs.get_dotted('a.b'), 1)
+
+    def test_get_dotted_keyerror(self):
+        attrs = NodeAttributes([{'a': {'b': 1}}])
+        with self.assertRaises(KeyError):
+            attrs.get_dotted('a.b.c')
+
+
 class NodeTestCase(ChefTestCase):
     def setUp(self):
         super(NodeTestCase, self).setUp()

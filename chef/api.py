@@ -16,8 +16,13 @@ from chef.utils import json
 from chef.utils.file import walk_backwards
 
 api_stack = threading.local()
-api_stack.value = []
 log = logging.getLogger('chef.api')
+
+def api_stack_value():
+    if not hasattr(api_stack, 'value'):
+        api_stack.value = []
+    return api_stack.value
+
 
 class ChefRequest(urllib2.Request):
     """Workaround for using PUT/DELETE with urllib2."""
@@ -41,7 +46,7 @@ class ChefAPI(object):
         self.key = Key(key)
         self.client = client
         self.version = version
-        if not api_stack.value:
+        if not api_stack_value():
             self.set_default()
     
     @classmethod
@@ -87,26 +92,26 @@ class ChefAPI(object):
     @staticmethod
     def get_global():
         """Return the API on the top of the stack."""
-        while api_stack.value:
-            api = api_stack.value[-1]()
+        while api_stack_value():
+            api = api_stack_value()[-1]()
             if api is not None:
                 return api
-            del api_stack.value[-1]
+            del api_stack_value()[-1]
     
     def set_default(self):
         """Make this the default API in the stack. Returns the old default if any."""
         old = None
-        if api_stack.value:
-            old = api_stack.value.pop(0)
-        api_stack.value.insert(0, weakref.ref(self))
+        if api_stack_value():
+            old = api_stack_value().pop(0)
+        api_stack_value().insert(0, weakref.ref(self))
         return old
     
     def __enter__(self):
-        api_stack.value.append(weakref.ref(self))
+        api_stack_value().append(weakref.ref(self))
         return self
     
     def __exit__(self, type, value, traceback):
-        del api_stack.value[-1]
+        del api_stack_value()[-1]
     
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,

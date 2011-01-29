@@ -113,9 +113,18 @@ class NodeTestCase(ChefTestCase):
     def test_override_attr(self):
         self.assertEqual(self.node.override['test_attr'], 'override')
 
-    # Switch these back to override later
     def test_composite_attr(self):
         self.assertEqual(self.node.attributes['test_attr'], 'override')
 
     def test_getitem(self):
         self.assertEqual(self.node['test_attr'], 'override')
+
+    def test_create(self):
+        name = self.random()
+        node = Node.create(name, run_list=['recipe[foo]'])
+        self.register(node)
+        self.assertEqual(node.run_list, ['recipe[foo]'])
+
+        node2 = Node(name)
+        self.assertTrue(node2.exists)
+        self.assertEqual(node2.run_list, ['recipe[foo]'])

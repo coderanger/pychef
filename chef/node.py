@@ -91,7 +91,7 @@ class Node(ChefObject):
     url = '/nodes'
     attributes = {
         'default': NodeAttributes,
-        'normal': lambda d=None: NodeAttributes(d, write=d),
+        'normal': lambda d: NodeAttributes(d, write=d),
         'override': NodeAttributes,
         'automatic': NodeAttributes,
         'run_list': list,

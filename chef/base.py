@@ -58,7 +58,7 @@ class ChefObject(object):
 
     def _populate(self, data):
         for name, cls in self.__class__.attributes.iteritems():
-            if self.exists:
+            if name in data:
                 value = cls(data[name])
             else:
                 value = cls()

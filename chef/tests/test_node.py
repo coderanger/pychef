@@ -128,3 +128,11 @@ class NodeTestCase(ChefTestCase):
         node2 = Node(name)
         self.assertTrue(node2.exists)
         self.assertEqual(node2.run_list, ['recipe[foo]'])
+
+    def test_create_crosslink(self):
+        node = Node.create(self.random())
+        self.register(node)
+        node.normal['foo'] = 'bar'
+        self.assertEqual(node['foo'], 'bar')
+        node.attributes['foo'] = 'baz'
+        self.assertEqual(node.normal['foo'], 'baz')

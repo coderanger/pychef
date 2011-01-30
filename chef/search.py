@@ -74,12 +74,14 @@ class Search(collections.Sequence):
     def __len__(self):
         return len(self.data['rows'])
 
-    def __getitem__(self, i):
-        if isinstance(i, slice):
-            if i.step is not None and i.step != 1:
+    def __getitem__(self, value):
+        if isinstance(value, slice):
+            if value.step is not None and value.step != 1:
                 raise ValueError('Cannot use a step other than 1')
-            return self.start(self._args['start']+i.start).rows(i.stop-i.start)
-        return SearchRow(self.data['rows'][i], self.api)
+            return self.start(self._args['start']+value.start).rows(value.stop-value.start)
+        if isinstance(value, basestring):
+            return self[self.index(value)]
+        return SearchRow(self.data['rows'][value], self.api)
 
     def __contains__(self, name):
         for row in self:

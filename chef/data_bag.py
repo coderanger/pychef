@@ -15,7 +15,6 @@ class DataBag(ChefObject, ChefQuery):
     def _populate(self, data):
         self.obj_class = DataBagItem
         self.names = data.keys()
-        self.parent = self
 
 
 class DataBagItem(ChefObject, collections.Mapping):

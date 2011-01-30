@@ -12,20 +12,20 @@ class SearchRow(dict):
     def __init__(self, row, api):
         super(SearchRow, self).__init__(row)
         self.api = api
+        self._object = None
 
     @property
     def object(self):
-        # Decode Chef class name
-        chef_class = self.get('json_class', '')
-        if chef_class.startswith('Chef::'):
-            chef_class = chef_class[6:]
-        cls = ChefObject.types.get(chef_class.lower())
-        if not cls:
-            raise ValueError('Unknown class %s'%chef_class)
-        obj = cls(self.get('name'), api=self.api, skip_load=True)
-        obj.exists = True
-        obj._populate(self)
-        return obj
+        if self._object is  None:
+            # Decode Chef class name
+            chef_class = self.get('json_class', '')
+            if chef_class.startswith('Chef::'):
+                chef_class = chef_class[6:]
+            cls = ChefObject.types.get(chef_class.lower())
+            if not cls:
+                raise ValueError('Unknown class %s'%chef_class)
+            self._object = cls.from_search(self, api=self.api)
+        return self._object
 
 
 class Search(collections.Sequence):

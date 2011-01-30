@@ -4,12 +4,10 @@ from chef.api import ChefAPI
 from chef.exceptions import ChefServerNotFoundError
 
 class ChefQuery(collections.Mapping):
-    def __init__(self, obj_class, names, api, parent=None):
+    def __init__(self, obj_class, names, api):
         self.obj_class = obj_class
         self.names = names
         self.api = api
-        self.parent = parent
-
     def __len__(self):
         return len(self.names)
 
@@ -22,7 +20,7 @@ class ChefQuery(collections.Mapping):
     def __getitem__(self, name):
         if name not in self:
             raise KeyError('%s not found'%name)
-        return self.obj_class(name, api=self.api, parent=self.parent)
+        return self.obj_class(name, api=self.api)
 
 
 class ChefObjectMeta(type):
@@ -63,6 +61,13 @@ class ChefObject(object):
             else:
                 value = cls()
             setattr(self, name, value)
+
+    @classmethod
+    def from_search(cls, data, api):
+        obj = cls(data.get('name'), api=api, skip_load=True)
+        obj.exists = True
+        obj._populate(data)
+        return obj
 
     @classmethod
     def list(cls, api=None):

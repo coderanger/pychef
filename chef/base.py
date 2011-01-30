@@ -102,5 +102,8 @@ class ChefObject(object):
             d[attr] = getattr(self, attr)
         return d
 
+    def __str__(self):
+        return self.name
+
     def __repr__(self):
         return '<%s %s>'%(type(self).__name__, self.name)

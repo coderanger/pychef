@@ -2,7 +2,7 @@ from chef import DataBag, DataBagItem
 from chef.exceptions import ChefError
 from chef.tests import ChefTestCase
 
-class DatBagTestCase(ChefTestCase):
+class DataBagTestCase(ChefTestCase):
     def test_list(self):
         bags = DataBag.list()
         self.assertIn('test_1', bags)

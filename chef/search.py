@@ -83,13 +83,13 @@ class Search(collections.Sequence):
 
     def __contains__(self, name):
         for row in self:
-            if row.get('name') == name:
+            if row.object.name == name:
                 return True
         return False
 
     def index(self, name):
         for i, row in enumerate(self):
-            if row.get('name') == name:
+            if row.object.name == name:
                 return i
         raise ValueError('%s not in search'%name)
 

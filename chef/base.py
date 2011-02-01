@@ -85,7 +85,7 @@ class ChefObject(object):
         return obj
 
     def save(self, api=None):
-        api = api or ChefAPI.get_global()
+        api = api or self.api
         try:
             api.api_request('PUT', self.url, data=self)
         except ChefServerNotFoundError, e:
@@ -94,7 +94,7 @@ class ChefObject(object):
             api.api_request('POST', self.__class__.url, data=self)
 
     def delete(self, api=None):
-        api = api or ChefAPI.get_global()
+        api = api or self.api
         api.api_request('DELETE', self.url)
 
     def to_dict(self):

@@ -1,6 +1,7 @@
 import abc
 import collections
 
+from chef.api import ChefAPI
 from chef.base import ChefObject, ChefQuery, ChefObjectMeta
 from chef.exceptions import ChefError
 
@@ -70,3 +71,23 @@ class DataBagItem(ChefObject, collections.Mapping):
 
     def __getitem__(self, key):
         return self.raw_data[key]
+
+    @classmethod
+    def create(cls, bag, name, api=None, **kwargs):
+        api = api or ChefAPI.get_global()
+        obj = cls(bag, name, api, skip_load=True)
+        for key, value in kwargs.iteritems():
+            obj[key] = value
+        obj['id'] = name
+        api.api_request('POST', cls.url+'/'+str(bag), data=obj.raw_data)
+        if isinstance(bag, DataBag) and name not in bag.names:
+            bag.names.append(name)
+        return obj
+
+    def save(self, api=None):
+        api = api or self.api
+        self['id'] = self.name
+        try:
+            api.api_request('PUT', self.url, data=self.raw_data)
+        except ChefServerNotFoundError, e:
+            api.api_request('POST', self.__class__.url+'/'+str(self._bag), data=self.raw_data)

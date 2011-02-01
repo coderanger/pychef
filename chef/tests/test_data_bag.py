@@ -28,3 +28,25 @@ class DataBagTestCase(ChefTestCase):
         item = q['item_1'].object
         self.assertIsInstance(item, DataBagItem)
         self.assertEqual(item['test_attr'], 1)
+
+    def test_create_bag(self):
+        name = self.random()
+        bag = DataBag.create(name)
+        self.register(bag)
+        self.assertIn(name, DataBag.list())
+
+    def test_create_item(self):
+        value = self.random()
+        bag_name = self.random()
+        bag = DataBag.create(bag_name)
+        self.register(bag)
+        item_name = self.random()
+        item = DataBagItem.create(bag, item_name, foo=value)
+        self.assertIn('foo', item)
+        self.assertEqual(item['foo'], value)
+        self.assertIn(item_name, bag)
+        bag2 = DataBag(bag_name)
+        self.assertIn(item_name, bag2)
+        item2 = bag2[item_name]
+        self.assertIn('foo', item)
+        self.assertEqual(item['foo'], value)

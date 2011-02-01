@@ -111,4 +111,4 @@ class ChefObject(object):
         return self.name
 
     def __repr__(self):
-        return '<%s %s>'%(type(self).__name__, self.name)
+        return '<%s %s>'%(type(self).__name__, self)

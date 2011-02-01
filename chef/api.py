@@ -3,6 +3,7 @@ import datetime
 import itertools
 import logging
 import os
+import re
 import socket
 import threading
 import urllib2
@@ -24,6 +25,10 @@ def api_stack_value():
     return api_stack.value
 
 
+class UnknownRubyExpression(Exception):
+    """Token exception for unprocessed Ruby expressions."""
+
+
 class ChefRequest(urllib2.Request):
     """Workaround for using PUT/DELETE with urllib2."""
     def __init__(self, *args, **kwargs):
@@ -39,7 +44,9 @@ class ChefRequest(urllib2.Request):
 
 class ChefAPI(object):
     """A model for a Chef API server."""
-    
+
+    ruby_value_re = re.compile(r'#\{([^}]+)\}')
+
     def __init__(self, url, key, client, version='0.9.12'):
         self.url = url.rstrip('/')
         self.parsed_url = urlparse.urlparse(self.url)
@@ -48,7 +55,7 @@ class ChefAPI(object):
         self.version = version
         if not api_stack_value():
             self.set_default()
-    
+
     @classmethod
     def from_config_file(cls, path):
         """Load Chef API paraters from a config file. Returns None if the
@@ -68,11 +75,23 @@ class ChefAPI(object):
                 continue # Not a simple key/value, we can't parse it anyway
             key, value = parts
             value = value.strip().strip('"\'')
+            def _ruby_value(match):
+                expr = match.group(1).strip()
+                if expr == 'current_dir':
+                    return os.path.dirname(path)
+                log.debug('Unknown ruby expression in line "%s"', line)
+                raise UnknownRubyExpression
+            try:
+                value = cls.ruby_value_re.sub(_ruby_value, value)
+            except UnknownRubyExpression:
+                continue
             if key == 'chef_server_url':
                 url = value
             elif key == 'node_name':
                 client_name = value
             elif key == 'client_key':
+                # When http://tickets.opscode.com/browse/CHEF-2011 is resolved
+                # there will need to be some post-processing here
                 key_path = value
         if not url:
             # No URL, no chance this was valid
@@ -88,7 +107,7 @@ class ChefAPI(object):
         if not client_name:
             client_name = socket.getfqdn()
         return cls(url, key_path, client_name)
-    
+
     @staticmethod
     def get_global():
         """Return the API on the top of the stack."""
@@ -97,7 +116,7 @@ class ChefAPI(object):
             if api is not None:
                 return api
             del api_stack_value()[-1]
-    
+
     def set_default(self):
         """Make this the default API in the stack. Returns the old default if any."""
         old = None
@@ -105,14 +124,14 @@ class ChefAPI(object):
             old = api_stack_value().pop(0)
         api_stack_value().insert(0, weakref.ref(self))
         return old
-    
+
     def __enter__(self):
         api_stack_value().append(weakref.ref(self))
         return self
-    
+
     def __exit__(self, type, value, traceback):
         del api_stack_value()[-1]
-    
+
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
             path=self.parsed_url.path+path.split('?', 1)[0], body=data,
@@ -133,7 +152,7 @@ class ChefAPI(object):
                 pass
             raise
         return response
-    
+
     def api_request(self, method, path, headers={}, data=None):    
         headers = dict((k.lower(), v) for k, v in headers.iteritems())
         headers['accept'] = 'application/json'
@@ -142,7 +161,7 @@ class ChefAPI(object):
             data = json.dumps(data)
         response = self.request(method, path, headers, data)
         return json.loads(response)
-    
+
     def __getitem__(self, path):
         return self.api_request('GET', path)
 

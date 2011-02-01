@@ -61,3 +61,17 @@ class DataBagTestCase(ChefTestCase):
         item2 = bag2[item_name]
         self.assertIn('foo', item)
         self.assertEqual(item['foo'], value)
+
+    def test_set_item(self):
+        value = self.random()
+        value2 = self.random()
+        bag_name = self.random()
+        bag = DataBag.create(bag_name)
+        self.register(bag)
+        item_name = self.random()
+        item = DataBagItem.create(bag, item_name, foo=value)
+        item['foo'] = value2
+        item.save()
+        self.assertEqual(item['foo'], value2)
+        item2 = DataBagItem(bag, item_name)
+        self.assertEqual(item2['foo'], value2)

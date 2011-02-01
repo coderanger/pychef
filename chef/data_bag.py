@@ -24,7 +24,7 @@ class DataBag(ChefObject, ChefQuery):
         return self.obj_class(self, name, api=self.api)
 
 
-class DataBagItem(ChefObject, collections.Mapping):
+class DataBagItem(ChefObject, collections.MutableMapping):
     __metaclass__ = DataBagMeta
 
     url = '/data'
@@ -71,6 +71,12 @@ class DataBagItem(ChefObject, collections.Mapping):
 
     def __getitem__(self, key):
         return self.raw_data[key]
+
+    def __setitem__(self, key, value):
+        self.raw_data[key] = value
+
+    def __delitem__(self, key):
+        del self.raw_data[key]
 
     @classmethod
     def create(cls, bag, name, api=None, **kwargs):

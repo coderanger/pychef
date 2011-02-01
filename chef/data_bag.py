@@ -87,6 +87,8 @@ class DataBagItem(ChefObject, collections.MutableMapping):
         obj['id'] = name
         api.api_request('POST', cls.url+'/'+str(bag), data=obj.raw_data)
         if isinstance(bag, DataBag) and name not in bag.names:
+            # Mutate the bag in-place if possible, so it will return the new
+            # item instantly
             bag.names.append(name)
         return obj
 

@@ -4,6 +4,7 @@ import random
 from unittest2 import TestCase
 
 from chef.api import ChefAPI
+from chef.exceptions import ChefError
 
 TEST_ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -13,7 +14,7 @@ def test_chef_api():
 
 class ChefTestCase(TestCase):
     """Base class for Chef unittests."""
-    
+
     def setUp(self):
         super(ChefTestCase, self).setUp()
         self.api = test_chef_api()

@@ -43,7 +43,19 @@ class ChefRequest(urllib2.Request):
 
 
 class ChefAPI(object):
-    """A model for a Chef API server."""
+    """The ChefAPI object is a wrapper for a single Chef server.
+
+    .. admonition:: The API stack
+
+        PyChef maintains a stack of :class:`ChefAPI` objects to be use with
+        other methods if an API object isn't given explicitly. The first
+        ChefAPI created will become the default, though you can set a specific
+        default using :meth:`ChefAPI.set_default`. You can also use a ChefAPI
+        as a context manager to create a scoped default::
+
+            with ChefAPI('http://localhost:4000', 'client.pem', 'admin'):
+                n = Node('web1')
+    """
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
 
@@ -165,8 +177,18 @@ class ChefAPI(object):
     def __getitem__(self, path):
         return self.api_request('GET', path)
 
+
 def autoconfigure(base_path=None):
-    """Try to find a Knife or chef-client config file to load parameters from."""
+    """Try to find a knife or chef-client config file to load parameters from,
+    starting from either the given base path or the current working directory.
+
+    The lookup order mirrors the one from Chef, first all folders from the base
+    path are walked back looking for .chef/knife.rb, then ~/.chef/knife.rb,
+    and finally /etc/chef/client.rb.
+
+    The first file that is found and can be loaded successfully will be loaded
+    into a :class:`ChefAPI` object.
+    """
     base_path = base_path or os.getcwd()
     # Scan up the tree for a knife.rb or client.rb. If that fails try looking
     # in /etc/chef. The /etc/chef check will never work in Win32, but it doesn't
@@ -184,7 +206,7 @@ def autoconfigure(base_path=None):
         return api
 
     # Nothing in the home dir, try /etc/chef/client.rb
-    config_path = os.path.join(os.path.sep, 'etc', 'chef')
+    config_path = os.path.join(os.path.sep, 'etc', 'chef', 'client.rb')
     api = ChefAPI.from_config_file(config_path)
     if api is not None:
         return api

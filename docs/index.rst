@@ -3,5 +3,6 @@ PyChef
 
 .. toctree::
     
+    api
     auth
     

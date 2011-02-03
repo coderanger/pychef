@@ -10,6 +10,18 @@ class DataBagMeta(ChefObjectMeta, abc.ABCMeta):
 
 
 class DataBag(ChefObject, ChefQuery):
+    """A Chef data bag object.
+
+    Data bag items are available via the mapping API. Evaluation works in the
+    same way as :class:`ChefQuery`, so requesting only the names will not
+    cause the items to be loaded::
+
+        bag = DataBag('versions')
+        item = bag['web']
+        for name, item in bag.iteritems():
+            print item['qa_version']
+    """
+
     __metaclass__ = DataBagMeta
 
     url = '/data'
@@ -22,6 +34,11 @@ class DataBag(ChefObject, ChefQuery):
 
 
 class DataBagItem(ChefObject, collections.MutableMapping):
+    """A Chef data bag item object.
+
+    Data bag items act as normal dicts and can contain arbitrary data.
+    """
+
     __metaclass__ = DataBagMeta
 
     url = '/data'
@@ -36,6 +53,7 @@ class DataBagItem(ChefObject, collections.MutableMapping):
 
     @property
     def bag(self):
+        """The :class:`DataBag` this item is a member of."""
         if not isinstance(self._bag, DataBag):
             self._bag = DataBag(self._bag, api=self.api)
         return self._bag
@@ -77,6 +95,8 @@ class DataBagItem(ChefObject, collections.MutableMapping):
 
     @classmethod
     def create(cls, bag, name, api=None, **kwargs):
+        """Create a new data bag item. Pass the initial value for any keys as
+        keyword arguments."""
         api = api or ChefAPI.get_global()
         obj = cls(bag, name, api, skip_load=True)
         for key, value in kwargs.iteritems():
@@ -90,6 +110,9 @@ class DataBagItem(ChefObject, collections.MutableMapping):
         return obj
 
     def save(self, api=None):
+        """Save this object to the server. If the object does not exist it
+        will be created.
+        """
         api = api or self.api
         self['id'] = self.name
         try:

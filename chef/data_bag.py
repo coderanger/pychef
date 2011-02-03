@@ -15,13 +15,10 @@ class DataBag(ChefObject, ChefQuery):
     url = '/data'
 
     def _populate(self, data):
-        self.obj_class = DataBagItem
         self.names = data.keys()
 
-    def __getitem__(self, name):
-        if name not in self:
-            raise KeyError('%s not found'%name)
-        return self.obj_class(self, name, api=self.api)
+    def obj_class(self, name, api):
+        return DataBagItem(self, name, api=api)
 
 
 class DataBagItem(ChefObject, collections.MutableMapping):

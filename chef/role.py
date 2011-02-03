@@ -1,7 +1,7 @@
 from chef.base import ChefObject
 
 class Role(ChefObject):
-    """A model object for a Chef role."""
+    """A Chef role object."""
 
     url = '/roles'
     attributes = {

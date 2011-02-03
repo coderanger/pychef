@@ -86,7 +86,32 @@ class NodeAttributes(collections.MutableMapping):
 
 
 class Node(ChefObject):
-    """A single Chef node."""
+    """A Chef node object.
+
+    .. admonition:: Node attributes
+
+        Node attributes can be accessed via the mapping API. This will perform
+        the same merge as Chef, though it will not take roles or other sources
+        of attribute data into account::
+
+            n = Node('web1')
+            print n['fqdn']
+            n['apache']['log_dir'] = '/srv/log'
+
+        Individual attribute levels ar available on named attributes::
+
+            n.default['attr']
+            n.normal['attr']
+            n.override['attr']
+            n.automatic['attr']
+
+        A helper is available to get and set dotted attribute paths. Note that
+        if one of the attribute keys includes a literal period, this will not
+        work correctly and you must use the mapping API::
+
+            n.attributes.get_dotted('apache.log_dir')
+            n.attributes.set_dotted('apache.log_dir', '/srv/log')
+    """
 
     url = '/nodes'
     attributes = {

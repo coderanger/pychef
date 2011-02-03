@@ -8,6 +8,7 @@ class ChefQuery(collections.Mapping):
         self.obj_class = obj_class
         self.names = names
         self.api = api
+
     def __len__(self):
         return len(self.names)
 
@@ -39,7 +40,7 @@ class ChefObject(object):
     url = ''
     attributes = {}
 
-    def __init__(self, name, api=None, skip_load=False, parent=None):
+    def __init__(self, name, api=None, skip_load=False):
         self.name = name
         self.api = api or ChefAPI.get_global()
         self.url = self.__class__.url + '/' + self.name
@@ -71,12 +72,17 @@ class ChefObject(object):
 
     @classmethod
     def list(cls, api=None):
+        """Return a :class:`ChefQuery` with the available objects of this type.
+        """
         api = api or ChefAPI.get_global()
         names = [name for name, url in api[cls.url].iteritems()]
         return ChefQuery(cls, names, api)
 
     @classmethod
     def create(cls, name, api=None, **kwargs):
+        """Create a new object of this type. Pass the initial value for any
+        attributes as keyword arguments.
+        """
         api = api or ChefAPI.get_global()
         obj = cls(name, api, skip_load=True)
         for key, value in kwargs.iteritems():
@@ -85,6 +91,9 @@ class ChefObject(object):
         return obj
 
     def save(self, api=None):
+        """Save this object to the server. If the object does not exist it
+        will be created.
+        """
         api = api or self.api
         try:
             api.api_request('PUT', self.url, data=self)
@@ -94,6 +103,7 @@ class ChefObject(object):
             api.api_request('POST', self.__class__.url, data=self)
 
     def delete(self, api=None):
+        """Delete this object from the server."""
         api = api or self.api
         api.api_request('DELETE', self.url)
 

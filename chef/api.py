@@ -65,6 +65,7 @@ class ChefAPI(object):
         self.key = Key(key)
         self.client = client
         self.version = version
+        self.platform = self.parsed_url.hostname == 'api.opscode.com'
         if not api_stack_value():
             self.set_default()
 

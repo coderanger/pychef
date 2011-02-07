@@ -11,10 +11,32 @@ else:
 class SSLError(Exception):
     """An error in OpenSSL."""
 
+#BIO *   BIO_new(BIO_METHOD *type);
+BIO_new = _eay.BIO_new
+BIO_new.argtypes = [c_void_p]
+BIO_new.restype = c_void_p
+
 # BIO *BIO_new_mem_buf(void *buf, int len);
 BIO_new_mem_buf = _eay.BIO_new_mem_buf
-BIO_new_mem_buf.argtypes = [c_void_p, c_int,]
+BIO_new_mem_buf.argtypes = [c_void_p, c_int]
 BIO_new_mem_buf.restype = c_void_p
+
+#BIO_METHOD *BIO_s_mem(void);
+BIO_s_mem = _eay.BIO_s_mem
+BIO_s_mem.argtypes = []
+BIO_s_mem.restype = c_void_p
+
+#long    BIO_ctrl(BIO *bp,int cmd,long larg,void *parg);
+BIO_ctrl = _eay.BIO_ctrl
+BIO_ctrl.argtypes = [c_void_p, c_int, c_long, c_void_p]
+BIO_ctrl.restype = c_long
+
+##define BIO_CTRL_INFO           3  /* opt - extra tit-bits */
+BIO_CTRL_INFO = 3
+
+##define BIO_get_mem_data(b,pp)  BIO_ctrl(b,BIO_CTRL_INFO,0,(char *)pp)
+def BIO_get_mem_data(b, pp):
+    return BIO_ctrl(b, BIO_CTRL_INFO, 0, pp)
 
 # int    BIO_free(BIO *a)
 BIO_free = _eay.BIO_free
@@ -30,6 +52,24 @@ BIO_free.errcheck = BIO_free_errcheck
 PEM_read_bio_RSAPrivateKey = _eay.PEM_read_bio_RSAPrivateKey
 PEM_read_bio_RSAPrivateKey.argtypes = [c_void_p, c_void_p, c_void_p, c_void_p]
 PEM_read_bio_RSAPrivateKey.restype = c_void_p
+
+#RSA *PEM_read_bio_RSAPublicKey(BIO *bp, RSA **x,
+#                                        pem_password_cb *cb, void *u);
+PEM_read_bio_RSAPublicKey = _eay.PEM_read_bio_RSAPublicKey
+PEM_read_bio_RSAPublicKey.argtypes = [c_void_p, c_void_p, c_void_p, c_void_p]
+PEM_read_bio_RSAPublicKey.restype = c_void_p
+
+#int PEM_write_bio_RSAPrivateKey(BIO *bp, RSA *x, const EVP_CIPHER *enc,
+#                                        unsigned char *kstr, int klen,
+#                                        pem_password_cb *cb, void *u);
+PEM_write_bio_RSAPrivateKey = _eay.PEM_write_bio_RSAPrivateKey
+PEM_write_bio_RSAPrivateKey.argtypes = [c_void_p, c_void_p, c_void_p, c_char_p, c_int, c_void_p, c_void_p]
+PEM_write_bio_RSAPrivateKey.restype = c_int
+
+#int PEM_write_bio_RSAPublicKey(BIO *bp, RSA *x);
+PEM_write_bio_RSAPublicKey = _eay.PEM_write_bio_RSAPublicKey
+PEM_write_bio_RSAPublicKey.argtypes = [c_void_p, c_void_p]
+PEM_write_bio_RSAPublicKey.restype = c_int
 
 #int RSA_private_encrypt(int flen, unsigned char *from,
 #    unsigned char *to, RSA *rsa,int padding);
@@ -50,15 +90,16 @@ RSA_free = _eay.RSA_free
 RSA_free.argtypes = [c_void_p]
 
 class Key(object):
-    """An OpenSSL RSA private key."""
-    
-    def __init__(self, fp):
+    """An OpenSSL RSA key."""
+
+    def __init__(self, fp, public=False):
         if isinstance(fp, basestring):
             fp = open(fp, 'rb')
         self.raw = fp.read()
         self.key = None
+        self.public = public
         self._load_key()
-        
+
     def _load_key(self):
         if '\0' in self.raw:
             # Raw string has embedded nulls, treat it as binary data
@@ -68,13 +109,17 @@ class Key(object):
         
         bio = BIO_new_mem_buf(buf, len(buf))
         try:
-            self.key = PEM_read_bio_RSAPrivateKey(bio, 0, 0, 0)
+            if self.public:
+                fn = PEM_read_bio_RSAPublicKey
+            else:
+                fn = PEM_read_bio_RSAPrivateKey
+            self.key = fn(bio, 0, 0, 0)
             if not self.key:
                 raise SSLError('Unable to load RSA private key')
         finally:
             BIO_free(bio)
-    
-    def encrypt(self, value, padding=RSA_PKCS1_PADDING):
+
+    def private_encrypt(self, value, padding=RSA_PKCS1_PADDING):
         buf = create_string_buffer(value, len(value))
         size = RSA_size(self.key)
         output = create_string_buffer(size)
@@ -82,7 +127,27 @@ class Key(object):
         if ret == 0:
             raise SSLError('Unable to encrypt data')
         return output.raw[:ret]
-    
+
+    def private_export(self):
+        if self.public:
+            raise SSLError('private method cannot be used on a public key')
+        out = BIO_new(BIO_s_mem())
+        PEM_write_bio_RSAPrivateKey(out, self.key, None, None, 0, None, None)
+        buf = c_char_p()
+        count = BIO_get_mem_data(out, byref(buf))
+        pem = string_at(buf, count)
+        BIO_free(out)
+        return pem
+
+    def public_export(self):
+        out = BIO_new(BIO_s_mem())
+        PEM_write_bio_RSAPublicKey(out, self.key)
+        buf = c_char_p()
+        count = BIO_get_mem_data(out, byref(buf))
+        pem = string_at(buf, count)
+        BIO_free(out)
+        return pem
+
     def __del__(self):
         if self.key and RSA_free:
             RSA_free(self.key)

@@ -8,8 +8,31 @@ elif sys.platform == 'darwin':
 else:
     _eay = CDLL('libcrypto.so')
 
+#unsigned long ERR_get_error(void);
+ERR_get_error = _eay.ERR_get_error
+ERR_get_error.argtypes = []
+ERR_get_error.restype = c_ulong
+
+#void ERR_error_string_n(unsigned long e, char *buf, size_t len);
+ERR_error_string_n = _eay.ERR_error_string_n
+ERR_error_string_n.argtypes = [c_ulong, c_char_p, c_size_t]
+ERR_error_string_n.restype = None
+
 class SSLError(Exception):
     """An error in OpenSSL."""
+
+    def __init__(self, message, *args):
+        message = message%args
+        err = ERR_get_error()
+        if err:
+            message += ':'
+        while err:
+            buf = create_string_buffer(120)
+            ERR_error_string_n(err, buf, 120)
+            message += '\n%s'%string_at(buf, 119)
+            err = ERR_get_error()
+        super(SSLError, self).__init__(message)
+
 
 #BIO *   BIO_new(BIO_METHOD *type);
 BIO_new = _eay.BIO_new

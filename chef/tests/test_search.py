@@ -38,21 +38,6 @@ class SearchTestCase(ChefTestCase):
         self.assertNotIn('test_2', s)
         self.assertIn('test_3', s)
 
-    @skip('search sorting not working')
-    def test_search_sort(self):
-        s = Search('node', sort='test_sort_key')
-        self.assertLess(s.index('test_1'), s.index('test_3'))
-
-    @skip('search sorting not working')
-    def test_search_sort_asc(self):
-        s = Search('node', sort='test_sort_key asc')
-        self.assertLess(s.index('test_1'), s.index('test_3'))
-
-    @skip('search sorting not working')
-    def test_search_sort_desc(self):
-        s = Search('node', sort='test_sort_key desc')
-        self.assertGreater(s.index('test_1'), s.index('test_3'))
-
     def test_rows(self):
         s = Search('node', rows=1)
         self.assertEqual(len(s), 1)

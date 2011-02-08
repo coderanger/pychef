@@ -33,12 +33,10 @@ class Search(collections.Sequence):
 
     url = '/search'
 
-    def __init__(self, index, q='*:*', sort='X_CHEF_id_CHEF_X asc', rows=1000, start=0, api=None):
+    def __init__(self, index, q='*:*', rows=1000, start=0, api=None):
         self.name = index
         self.api = api or ChefAPI.get_global()
-        if not (sort.endswith(' asc') or sort.endswith(' desc')):
-            sort += ' asc'
-        self._args = dict(q=q, sort=sort, rows=rows, start=start)
+        self._args = dict(q=q, rows=rows, start=start)
         self.url = self.__class__.url + '/' + self.name + '?' + urllib.urlencode(self._args)
 
     @property
@@ -54,11 +52,6 @@ class Search(collections.Sequence):
     def query(self, query):
         args = copy.copy(self._args)
         args['q'] = query
-        return self.__class__(self.name, api=self.api, **args)
-
-    def sort(self, sort):
-        args = copy.copy(self._args)
-        args['sort'] = sort
         return self.__class__(self.name, api=self.api, **args)
 
     def rows(self, rows):

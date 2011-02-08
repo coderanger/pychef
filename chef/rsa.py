@@ -153,7 +153,7 @@ class Key(object):
         size = RSA_size(self.key)
         output = create_string_buffer(size)
         ret = RSA_private_encrypt(len(buf), buf, output, self.key, padding)
-        if ret == 0:
+        if ret <= 0:
             raise SSLError('Unable to encrypt data')
         return output.raw[:ret]
 

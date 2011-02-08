@@ -54,8 +54,14 @@ BIO_ctrl = _eay.BIO_ctrl
 BIO_ctrl.argtypes = [c_void_p, c_int, c_long, c_void_p]
 BIO_ctrl.restype = c_long
 
+#define BIO_CTRL_RESET          1  /* opt - rewind/zero etc */
+BIO_CTRL_RESET = 1
 ##define BIO_CTRL_INFO           3  /* opt - extra tit-bits */
 BIO_CTRL_INFO = 3
+
+#define BIO_reset(b)            (int)BIO_ctrl(b,BIO_CTRL_RESET,0,NULL)
+def BIO_reset(b):
+    return BIO_ctrl(b, BIO_CTRL_RESET, 0, None)
 
 ##define BIO_get_mem_data(b,pp)  BIO_ctrl(b,BIO_CTRL_INFO,0,(char *)pp)
 def BIO_get_mem_data(b, pp):
@@ -115,12 +121,11 @@ RSA_free.argtypes = [c_void_p]
 class Key(object):
     """An OpenSSL RSA key."""
 
-    def __init__(self, fp, public=False):
+    def __init__(self, fp):
         if isinstance(fp, basestring):
             fp = open(fp, 'rb')
         self.raw = fp.read()
         self.key = None
-        self.public = public
         self._load_key()
 
     def _load_key(self):
@@ -132,13 +137,14 @@ class Key(object):
         
         bio = BIO_new_mem_buf(buf, len(buf))
         try:
-            if self.public:
-                fn = PEM_read_bio_RSAPublicKey
-            else:
-                fn = PEM_read_bio_RSAPrivateKey
-            self.key = fn(bio, 0, 0, 0)
+            self.public = False
+            self.key = PEM_read_bio_RSAPrivateKey(bio, 0, 0, 0)
             if not self.key:
-                raise SSLError('Unable to load RSA private key')
+                BIO_reset(bio)
+                self.public = True
+                self.key = PEM_read_bio_RSAPublicKey(bio, 0, 0, 0)
+            if not self.key:
+                raise SSLError('Unable to load RSA key')
         finally:
             BIO_free(bio)
 

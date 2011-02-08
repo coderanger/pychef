@@ -33,3 +33,14 @@ class RSATestCase(unittest2.TestCase):
         key = Key(os.path.join(TEST_ROOT, 'client_pub.pem'))
         raw = open(os.path.join(TEST_ROOT, 'client_pub.pem'), 'rb').read()
         self.assertTrue(key.public_export().strip(), raw.strip())
+
+    def test_encrypt_decrypt(self):
+        key = Key(os.path.join(TEST_ROOT, 'client.pem'))
+        msg = 'Test string!'
+        self.assertEqual(key.public_decrypt(key.private_encrypt(msg)), msg)
+
+    def test_encrypt_decrypt_pubkey(self):
+        key = Key(os.path.join(TEST_ROOT, 'client.pem'))
+        pubkey = Key(os.path.join(TEST_ROOT, 'client_pub.pem'))
+        msg = 'Test string!'
+        self.assertEqual(pubkey.public_decrypt(key.private_encrypt(msg)), msg)

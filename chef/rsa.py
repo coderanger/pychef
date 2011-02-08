@@ -106,6 +106,12 @@ RSA_private_encrypt = _eay.RSA_private_encrypt
 RSA_private_encrypt.argtypes = [c_int, c_void_p, c_void_p, c_void_p, c_int]
 RSA_private_encrypt.restype = c_int
 
+#int RSA_public_decrypt(int flen, unsigned char *from,
+#   unsigned char *to, RSA *rsa, int padding);
+RSA_public_decrypt = _eay.RSA_public_decrypt
+RSA_public_decrypt.argtypes = [c_int, c_void_p, c_void_p, c_void_p, c_int]
+RSA_public_decrypt.restype = c_int
+
 RSA_PKCS1_PADDING = 1
 RSA_NO_PADDING = 3
 
@@ -155,6 +161,15 @@ class Key(object):
         ret = RSA_private_encrypt(len(buf), buf, output, self.key, padding)
         if ret <= 0:
             raise SSLError('Unable to encrypt data')
+        return output.raw[:ret]
+
+    def public_decrypt(self, value, padding=RSA_PKCS1_PADDING):
+        buf = create_string_buffer(value, len(value))
+        size = RSA_size(self.key)
+        output = create_string_buffer(size)
+        ret = RSA_public_decrypt(len(buf), buf, output, self.key, padding)
+        if ret <= 0:
+            raise SSLError('Unable to decrypt data')
         return output.raw[:ret]
 
     def private_export(self):

@@ -47,6 +47,11 @@ def canonical_path(path):
     return path
 
 def canonical_request(http_method, path, hashed_body, timestamp, user_id):
+    # Canonicalize request parameters
+    http_method = http_method.upper()
+    path = canonical_path(path)
+    if isinstance(timestamp, datetime.datetime):
+        timestamp = canonical_time(timestamp)
     hashed_path = sha1_base64(path)
     return ('Method:%(http_method)s\n'
             'Hashed Path:%(hashed_path)s\n'
@@ -56,9 +61,6 @@ def canonical_request(http_method, path, hashed_body, timestamp, user_id):
 
 def sign_request(key, http_method, path, body, host, timestamp, user_id):
     """Generate the needed headers for the Opscode authentication protocol."""
-    # Canonicalize request parameters
-    http_method = http_method.upper()
-    path = canonical_path(path)
     timestamp = canonical_time(timestamp)
     hashed_body = sha1_base64(body or '')
     

@@ -49,3 +49,18 @@ class RSATestCase(unittest2.TestCase):
         key = Key.generate()
         msg = 'Test string!'
         self.assertEqual(key.public_decrypt(key.private_encrypt(msg)), msg)
+
+    def test_generate_load(self):
+        key = Key.generate()
+        key2 = Key(key.private_export())
+        self.assertFalse(key2.public)
+        key3 = Key(key.public_export())
+        self.assertTrue(key3.public)
+
+    def test_load_pem_string(self):
+        key = Key(open(os.path.join(TEST_ROOT, 'client.pem'), 'rb').read())
+        self.assertFalse(key.public)
+
+    def test_load_public_pem_string(self):
+        key = Key(open(os.path.join(TEST_ROOT, 'client_pub.pem'), 'rb').read())
+        self.assertTrue(key.public)

@@ -138,11 +138,17 @@ class Key(object):
 
     def __init__(self, fp=None):
         self.key = None
+        self.public = False
         if not fp:
             return
         if isinstance(fp, basestring):
-            fp = open(fp, 'rb')
-        self.raw = fp.read()
+            if fp.startswith('-----'):
+                # PEM formatted text
+                self.raw = fp
+            else:
+                self.raw = open(fp, 'rb').read()
+        else:
+            self.raw = fp.read()
         self._load_key()
 
     def _load_key(self):
@@ -154,7 +160,6 @@ class Key(object):
         
         bio = BIO_new_mem_buf(buf, len(buf))
         try:
-            self.public = False
             self.key = PEM_read_bio_RSAPrivateKey(bio, 0, 0, 0)
             if not self.key:
                 BIO_reset(bio)

@@ -3,7 +3,7 @@ import os
 import unittest2
 
 from chef.rsa import Key, SSLError
-from chef.tests import TEST_ROOT
+from chef.tests import TEST_ROOT, skipSlowTest
 
 class RSATestCase(unittest2.TestCase):
     def test_load_private(self):
@@ -44,3 +44,8 @@ class RSATestCase(unittest2.TestCase):
         pubkey = Key(os.path.join(TEST_ROOT, 'client_pub.pem'))
         msg = 'Test string!'
         self.assertEqual(pubkey.public_decrypt(key.private_encrypt(msg)), msg)
+
+    def test_generate(self):
+        key = Key.generate()
+        msg = 'Test string!'
+        self.assertEqual(key.public_decrypt(key.private_encrypt(msg)), msg)

@@ -1,12 +1,16 @@
 import os
 import random
 
-from unittest2 import TestCase
+from unittest2 import TestCase, skipUnless
 
 from chef.api import ChefAPI
 from chef.exceptions import ChefError
 
 TEST_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+def skipSlowTest():
+    return skipUnless(os.environ.get('PYCHEF_SLOW_TESTS'), 'slow tests skipped, set $PYCHEF_SLOW_TESTS=1 to enable')
+
 
 def test_chef_api():
     return ChefAPI('https://api.opscode.com/organizations/pycheftest', os.path.join(TEST_ROOT, 'client.pem'), 'unittests')

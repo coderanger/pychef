@@ -120,6 +120,15 @@ RSA_size = _eay.RSA_size
 RSA_size.argtypes = [c_void_p]
 RSA_size.restype = c_int
 
+#RSA *RSA_generate_key(int num, unsigned long e,
+#    void (*callback)(int,int,void *), void *cb_arg);
+RSA_generate_key = _eay.RSA_generate_key
+RSA_generate_key.argtypes = [c_int, c_ulong, c_void_p, c_void_p]
+RSA_generate_key.restype = c_void_p
+
+##define RSA_F4  0x10001L
+RSA_F4 = 0x10001
+
 # void RSA_free(RSA *rsa);
 RSA_free = _eay.RSA_free
 RSA_free.argtypes = [c_void_p]
@@ -127,11 +136,13 @@ RSA_free.argtypes = [c_void_p]
 class Key(object):
     """An OpenSSL RSA key."""
 
-    def __init__(self, fp):
+    def __init__(self, fp=None):
+        self.key = None
+        if not fp:
+            return
         if isinstance(fp, basestring):
             fp = open(fp, 'rb')
         self.raw = fp.read()
-        self.key = None
         self._load_key()
 
     def _load_key(self):
@@ -153,6 +164,12 @@ class Key(object):
                 raise SSLError('Unable to load RSA key')
         finally:
             BIO_free(bio)
+
+    @classmethod
+    def generate(cls, size=1024, exp=RSA_F4):
+        self = cls()
+        self.key = RSA_generate_key(size, exp, None, None)
+        return self
 
     def private_encrypt(self, value, padding=RSA_PKCS1_PADDING):
         buf = create_string_buffer(value, len(value))

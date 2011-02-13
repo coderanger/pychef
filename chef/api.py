@@ -62,7 +62,9 @@ class ChefAPI(object):
     def __init__(self, url, key, client, version='0.9.12'):
         self.url = url.rstrip('/')
         self.parsed_url = urlparse.urlparse(self.url)
-        self.key = Key(key)
+        if not isinstance(key, Key):
+            key = Key(key)
+        self.key = key
         self.client = client
         self.version = version
         self.platform = self.parsed_url.hostname == 'api.opscode.com'

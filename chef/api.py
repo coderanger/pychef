@@ -145,6 +145,10 @@ class ChefAPI(object):
     def __exit__(self, type, value, traceback):
         del api_stack_value()[-1]
 
+    def _request(self, request):
+        # Testing hook, subclass and override for WSGI intercept
+        return urllib2.urlopen(request).read()
+
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
             path=self.parsed_url.path+path.split('?', 1)[0], body=data,
@@ -155,7 +159,7 @@ class ChefAPI(object):
         headers.update(auth_headers)
         request = ChefRequest(self.url+path, data, headers, method=method)
         try:
-            response = urllib2.urlopen(request).read()
+            response = self._request(request)
         except urllib2.HTTPError, e:
             err = e.read()
             try:

@@ -177,6 +177,8 @@ class Key(object):
         return self
 
     def private_encrypt(self, value, padding=RSA_PKCS1_PADDING):
+        if self.public:
+            raise SSLError('private method cannot be used on a public key')
         buf = create_string_buffer(value, len(value))
         size = RSA_size(self.key)
         output = create_string_buffer(size)

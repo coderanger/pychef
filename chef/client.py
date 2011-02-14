@@ -7,7 +7,7 @@ class Client(ChefObject):
     url = '/clients'
 
     def _populate(self, data):
-        self.platform = self.api.platform
+        self.platform = self.api and self.api.platform
         self.private_key = None
         if self.platform:
             self.orgname = data.get('orgname')

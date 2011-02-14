@@ -26,6 +26,7 @@ class Client(ChefObject):
 
     def to_dict(self):
         d = super(Client, self).to_dict()
+        d['json_class'] = 'Chef::ApiClient'
         if self.platform:
             d.update({
                 'orgname': self.orgname,

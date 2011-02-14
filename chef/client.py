@@ -24,8 +24,8 @@ class Client(ChefObject):
     def certificate(self):
         return self.public_key
 
-    def to_json(self):
-        d = super(Client, self).to_json()
+    def to_dict(self):
+        d = super(Client, self).to_dict()
         if self.platform:
             d.update({
                 'orgname': self.orgname,

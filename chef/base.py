@@ -64,7 +64,7 @@ class ChefObject(object):
             setattr(self, name, value)
 
     @classmethod
-    def from_search(cls, data, api):
+    def from_search(cls, data, api=None):
         obj = cls(data.get('name'), api=api, skip_load=True)
         obj.exists = True
         obj._populate(data)

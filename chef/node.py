@@ -141,3 +141,7 @@ class Node(ChefObject):
                                           data.get('override', {}),
                                           data['normal'], # Must exist, see above
                                           data.get('default', {})), write=data['normal'])
+
+    def cookbooks(self, api=None):
+        api = api or self.api
+        return api[self.url + '/cookbooks']

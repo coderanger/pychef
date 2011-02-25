@@ -83,7 +83,7 @@ Hashing
 =======
 
 All hashes are Base64-encoded SHA1. The Base64 text must have line-breaks
-every 60 characters. The Bas66 alphabet must be the standard alphabet
+every 60 characters. The Base64 alphabet must be the standard alphabet
 defined in `RFC 3548`__ (``+/=``).
 
 __ http://tools.ietf.org/html/rfc3548.html

@@ -9,6 +9,7 @@ class Roledef(object):
 	self.hostname_attr = hostname_attr
 	
     def getSubAttribute(self, _dict, attr):
+
         attrs = attr.split('.')
         d = None #dict.get(attrs[0], None)
         for i in xrange(len(attrs)):
@@ -40,6 +41,10 @@ def chef_roledefs(api=None, hostname_attr = 'fqdn'):
         @roles('web_app')
         def mytask():
             run('uptime')
+            
+    hostname_attr is the attribute in the chef node that holds the real hostname.
+    to refer to a nested attribute, separate the levels with '.'.
+    for example 'ec2.public_hostname'
     """
     api = api or ChefAPI.get_global() or autoconfigure()
     if not api:

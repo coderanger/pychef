@@ -8,24 +8,11 @@ class Roledef(object):
         self.api = api
 	self.hostname_attr = hostname_attr
 	
-    def getSubAttribute(self, _dict, attr):
-
-        attrs = attr.split('.')
-        d = None #dict.get(attrs[0], None)
-        for i in xrange(len(attrs)):
-            _d = (d or _dict).get(attrs[i], None)
-            if not _d:
-                break
-            d = _d
-
-        return d
-
-
-
+    
     def __call__(self):
+
         for row in Search('node', 'roles:'+self.name, api=self.api):
-            print row.object, type(row.object)
-            yield self.getSubAttribute(row.object, self.hostname_attr)
+            yield row.object.attributes.get_dotted(self.hostname_attr)
 
 
 def chef_roledefs(api=None, hostname_attr = 'fqdn'):

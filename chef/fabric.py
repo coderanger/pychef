@@ -3,16 +3,19 @@ from chef.api import ChefAPI, autoconfigure
 from chef.exceptions import ChefError
 
 class Roledef(object):
-    def __init__(self, name, api):
+    def __init__(self, name, api, hostname_attr):
         self.name = name
         self.api = api
-
+	self.hostname_attr = hostname_attr
+	
+    
     def __call__(self):
+
         for row in Search('node', 'roles:'+self.name, api=self.api):
-            yield row.object['fqdn']
+            yield row.object.attributes.get_dotted(self.hostname_attr)
 
 
-def chef_roledefs(api=None):
+def chef_roledefs(api=None, hostname_attr = 'fqdn'):
     """Build a Fabric roledef dictionary from a Chef server.
 
     Example:
@@ -25,6 +28,10 @@ def chef_roledefs(api=None):
         @roles('web_app')
         def mytask():
             run('uptime')
+            
+    hostname_attr is the attribute in the chef node that holds the real hostname.
+    to refer to a nested attribute, separate the levels with '.'.
+    for example 'ec2.public_hostname'
     """
     api = api or ChefAPI.get_global() or autoconfigure()
     if not api:
@@ -32,5 +39,5 @@ def chef_roledefs(api=None):
     roledefs = {}
     for row in Search('role', api=api):
         name = row['name']
-        roledefs[name] =  Roledef(name, api)
+        roledefs[name] =  Roledef(name, api, hostname_attr)
     return roledefs

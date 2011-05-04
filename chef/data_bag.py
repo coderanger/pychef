@@ -3,7 +3,7 @@ import collections
 
 from chef.api import ChefAPI
 from chef.base import ChefObject, ChefQuery, ChefObjectMeta
-from chef.exceptions import ChefError
+from chef.exceptions import ChefError, ChefServerNotFoundError
 
 class DataBagMeta(ChefObjectMeta, abc.ABCMeta):
     """A metaclass to allow DataBag to use multiple inheritance."""

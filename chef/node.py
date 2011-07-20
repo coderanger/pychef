@@ -120,6 +120,7 @@ class Node(ChefObject):
         'override': NodeAttributes,
         'automatic': NodeAttributes,
         'run_list': list,
+        'chef_environment': str
     }
 
     def get(self, key, default=None):

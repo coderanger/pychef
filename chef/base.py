@@ -1,7 +1,7 @@
 import collections
 
 from chef.api import ChefAPI, is_version_compatible
-from chef.exceptions import ChefServerNotFoundError
+from chef.exceptions import *
 
 class ChefQuery(collections.Mapping):
     def __init__(self, obj_class, names, api):

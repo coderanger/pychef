@@ -11,7 +11,7 @@ class Roledef(object):
 	
     
     def __call__(self):
-        if self.api.version.split(".") >= [0, 10]:
+        if map(int, self.api.version.split(".")) >= [0, 10]:
             query = 'roles:%s AND chef_environment:%s' % (self.name, self.environment)
         else:
             query = 'roles:%s' % self.name

@@ -9,4 +9,5 @@ class Role(ChefObject):
         'run_list': list,
         'default_attributes': dict,
         'override_attributes': dict,
+        'env_run_lists': dict
     }

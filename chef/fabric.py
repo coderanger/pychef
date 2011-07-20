@@ -7,11 +7,12 @@ class Roledef(object):
         self.name = name
         self.api = api
 	self.hostname_attr = hostname_attr
+    self.environment = environment
 	
     
     def __call__(self):
         if self.api.version.split(".") >= [0, 10]:
-            query = 'roles:%s AND chef_environment:%s' % (self.name, environment)
+            query = 'roles:%s AND chef_environment:%s' % (self.name, self.environment)
         else:
             query = 'roles:%s' % self.name
 

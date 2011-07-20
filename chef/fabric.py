@@ -6,8 +6,8 @@ class Roledef(object):
     def __init__(self, name, api, hostname_attr, environment):
         self.name = name
         self.api = api
-	self.hostname_attr = hostname_attr
-    self.environment = environment
+        self.hostname_attr = hostname_attr
+        self.environment = environment
 	
     
     def __call__(self):

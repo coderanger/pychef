@@ -10,8 +10,12 @@ class Roledef(object):
 	
     
     def __call__(self):
+        if api.version.split(".") >= [0, 10]:
+            query = 'roles:%s AND chef_environment:%s' % (self.name, environment)
+        else:
+            query = 'roles:%s' % self.name
 
-        for row in Search('node', 'roles:%s AND chef_environment:%s' % (self.name, environment), api=self.api):
+        for row in Search('node', query, api=self.api):
             yield row.object.attributes.get_dotted(self.hostname_attr)
 
 

@@ -185,17 +185,22 @@ class ChefAPI(object):
         return self.api_request('GET', path)
 
 
-def autoconfigure(base_path=None):
+def autoconfigure(base_path=None, config_file=None):
     """Try to find a knife or chef-client config file to load parameters from,
-    starting from either the given base path or the current working directory.
+    starting from either the given config file, base path or the current working directory.
 
-    The lookup order mirrors the one from Chef, first all folders from the base
+    When no config file name is given, the lookup order mirrors the one from Chef, first all folders from the base
     path are walked back looking for .chef/knife.rb, then ~/.chef/knife.rb,
     and finally /etc/chef/client.rb.
 
     The first file that is found and can be loaded successfully will be loaded
     into a :class:`ChefAPI` object.
     """
+    if config_file:
+        api = ChefAPI.from_config_file(config_file)
+        if api is not None:
+            return api
+
     base_path = base_path or os.getcwd()
     # Scan up the tree for a knife.rb or client.rb. If that fails try looking
     # in /etc/chef. The /etc/chef check will never work in Win32, but it doesn't

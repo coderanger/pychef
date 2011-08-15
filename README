@@ -8,7 +8,7 @@ Example
 
     from chef import autoconfigure, Node
 
-    autoconfigure()
+    api = autoconfigure()
     n = Node('web1')
     print n['fqdn']
     n['myapp']['version'] = '1.0'

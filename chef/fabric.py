@@ -17,7 +17,8 @@ class Roledef(object):
             query = 'roles:%s' % self.name
 
         for row in Search('node', query, api=self.api):
-            yield row.object.attributes.get_dotted(self.hostname_attr)
+	    if row:	
+	            yield row.object.attributes.get_dotted(self.hostname_attr)
 
 
 def chef_roledefs(api=None, hostname_attr = 'fqdn', environment = "_default"):

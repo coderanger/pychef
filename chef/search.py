@@ -74,6 +74,8 @@ class Search(collections.Sequence):
             return self.start(self._args['start']+value.start).rows(value.stop-value.start)
         if isinstance(value, basestring):
             return self[self.index(value)]
+        if self.data['rows'][value] is None:
+		return None
         return SearchRow(self.data['rows'][value], self.api)
 
     def __contains__(self, name):

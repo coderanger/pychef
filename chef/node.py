@@ -62,7 +62,7 @@ class NodeAttributes(collections.MutableMapping):
       has_key = true
       try:
         get_dotted(key)
-      except:
+      except KeyError:
         has_key = false
       return has_key
 

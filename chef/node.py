@@ -4,7 +4,7 @@ from chef.base import ChefObject
 from chef.exceptions import ChefError
 
 class NodeAttributes(collections.MutableMapping):
-    
+
     def __init__(self, search_path=[], path=None, write=None):
         if not isinstance(search_path, collections.Sequence):
             search_path = [search_path]
@@ -57,6 +57,14 @@ class NodeAttributes(collections.MutableMapping):
         for path_key in self.path:
             dest = dest.setdefault(path_key, {})
         del dest[key]
+
+    def has_dotted(self, key):
+      has_key = true
+      try:
+        get_dotted(key)
+      except KeyError:
+        has_key = false
+      return has_key
 
     def get_dotted(self, key):
         value = self
@@ -121,6 +129,9 @@ class Node(ChefObject):
         'automatic': NodeAttributes,
         'run_list': list,
     }
+
+    def has_key(self, key):
+      return self.attributes.has_dotted(key)
 
     def get(self, key, default=None):
         return self.attributes.get(key, default)

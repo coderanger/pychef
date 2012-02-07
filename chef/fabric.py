@@ -3,16 +3,20 @@ from chef.api import ChefAPI, autoconfigure
 from chef.exceptions import ChefError
 
 class Roledef(object):
+    """Represents a Fabric roledef for a Chef role.
+        
+    hostname_attr can either be a string that is the attribute in the chef node that holds the real hostname.
+    Or it can be a function that takes a Node object as a parameter and returns the attribute.
+    """ 
     def __init__(self, name, api, hostname_attr):
         self.name = name
         self.api = api
-	self.hostname_attr = hostname_attr
-	
-    
-    def __call__(self):
+        self.hostname_attr = hostname_attr 
 
+    def __call__(self):
         for row in Search('node', 'roles:'+self.name, api=self.api):
-            yield row.object.attributes.get_dotted(self.hostname_attr)
+            attr = self.hostname_attr(row.object) if callable(self.hostname_attr) else self.hostname_attr
+            yield row.object.attributes.get_dotted(attr)
 
 
 def chef_roledefs(api=None, hostname_attr = 'fqdn'):
@@ -28,10 +32,21 @@ def chef_roledefs(api=None, hostname_attr = 'fqdn'):
         @roles('web_app')
         def mytask():
             run('uptime')
-            
-    hostname_attr is the attribute in the chef node that holds the real hostname.
-    to refer to a nested attribute, separate the levels with '.'.
-    for example 'ec2.public_hostname'
+
+    hostname_attr can either be a string that is the attribute in the chef node that holds the real hostname.
+    Or it can be a function that takes a Node object as a parameter and returns the attribute.
+    
+    To refer to a nested attribute, separate the levels with '.' e.g. 'ec2.public_hostname'
+
+    For example:
+        def use_ec2_hostname(node):
+            if node.attributes.has_dotted('fqdn'):
+              return 'fqdn'
+            else:
+              return 'ec2.public_hostname'
+      
+        env.roledefs = chef_roledefs(hostname_attr = use_ec2_hostname)
+
     """
     api = api or ChefAPI.get_global() or autoconfigure()
     if not api:

@@ -42,7 +42,7 @@ def chef_roledefs(api=None, hostname_attr = 'fqdn'):
         def use_ec2_hostname(node):
             if node.attributes.has_dotted('fqdn'):
               return 'fqdn'
-            else
+            else:
               return 'ec2.public_hostname'
       
         env.roledefs = chef_roledefs(hostname_attr = use_ec2_hostname)

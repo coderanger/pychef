@@ -59,9 +59,9 @@ class NodeAttributes(collections.MutableMapping):
         del dest[key]
 
     def has_dotted(self, key):
-      has_key = true
+      has_key = True
       try:
-        get_dotted(key)
+        self.get_dotted(key)
       except KeyError:
         has_key = false
       return has_key

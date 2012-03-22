@@ -9,7 +9,6 @@ A Python API for interacting with a Chef server.
 Example
 -------
 
-.. parsed-literal::
     from chef import autoconfigure, Node
     
     api = autoconfigure()

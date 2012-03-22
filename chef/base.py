@@ -2,7 +2,7 @@ import collections
 
 import pkg_resources
 
-from chef.api import ChefAPI, is_version_compatible
+from chef.api import ChefAPI
 from chef.exceptions import *
 
 class ChefQuery(collections.Mapping):
@@ -49,7 +49,7 @@ class ChefObject(object):
         self.name = name
         self.api = api or ChefAPI.get_global()
 
-        if not is_version_compatible(self.api_version, self.api):
+        if self.api_version_parsed > self.api.version_parsed:
             raise ChefAPIVersionError, "Class %s is not compatible with API version %s" % (self.__class__.__name__, self.api.version)
 
         self.url = self.__class__.url + '/' + self.name

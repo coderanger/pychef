@@ -228,5 +228,6 @@ def autoconfigure(base_path=None, config_file=None):
 
 def is_version_compatible(min_version, api=None):
     if api is None: api = ChefAPI.get_global()
-    if type(min_version) == str: min_version = map(int, min_version.split("."))
-    return map(int, api.version.split(".")) >= min_version
+    if isinstance(min_version, basestring):
+        min_version = pkg_resources.parse_version(min_version)
+    return min_version >= api.version_parsed

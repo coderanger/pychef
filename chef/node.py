@@ -1,6 +1,7 @@
 import collections
 
 from chef.base import ChefObject
+from chef.environment import Environment
 from chef.exceptions import ChefError
 
 class NodeAttributes(collections.MutableMapping):
@@ -137,6 +138,8 @@ class Node(ChefObject):
             # Make this exist so the normal<->attributes cross-link will
             # function correctly
             data['normal'] = {}
+        if self.api.version_parsed >= Environment.api_version_parsed and not data.get('chef_environment'):
+            data['chef_environment'] = '_default'
         super(Node, self)._populate(data)
         self.attributes = NodeAttributes((data.get('automatic', {}),
                                           data.get('override', {}),

@@ -50,7 +50,7 @@ class ChefObject(object):
         self.api = api or ChefAPI.get_global()
 
         if not is_version_compatible(self.api_version, self.api):
-            raise ChefApiVersionError, "Class %s is not compatible with API version %s" % (self.__class__.__name__, self.api.version)
+            raise ChefAPIVersionError, "Class %s is not compatible with API version %s" % (self.__class__.__name__, self.api.version)
 
         self.url = self.__class__.url + '/' + self.name
         self.exists = False

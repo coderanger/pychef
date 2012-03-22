@@ -23,5 +23,6 @@ class ChefServerError(ChefError):
 class ChefServerNotFoundError(ChefServerError):
     """A 404 Not Found server error."""
 
-class ChefApiVersionError(ChefError):
+
+class ChefAPIVersionError(ChefError):
     """An incompatible API version error"""

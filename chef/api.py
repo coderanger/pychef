@@ -10,6 +10,8 @@ import urllib2
 import urlparse
 import weakref
 
+import pkg_resources
+
 from chef.auth import sign_request
 from chef.exceptions import ChefServerError
 from chef.rsa import Key
@@ -59,7 +61,7 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
 
-    def __init__(self, url, key, client, version='0.9.12'):
+    def __init__(self, url, key, client, version='0.10.8'):
         self.url = url.rstrip('/')
         self.parsed_url = urlparse.urlparse(self.url)
         if not isinstance(key, Key):
@@ -67,6 +69,7 @@ class ChefAPI(object):
         self.key = key
         self.client = client
         self.version = version
+        self.version_parsed = pkg_resources.parse_version(self.version)
         self.platform = self.parsed_url.hostname == 'api.opscode.com'
         if not api_stack_value():
             self.set_default()

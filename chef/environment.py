@@ -1,13 +1,15 @@
 from chef.base import ChefObject
 
-class Role(ChefObject):
-    """A Chef role object."""
+class Environment(ChefObject):
+    """A Chef environment object."""
 
-    url = '/roles'
+    url = '/environments'
+    
+    api_version = '0.10'
+
     attributes = {
         'description': str,
-        'run_list': list,
+        'cookbook_versions': dict,
         'default_attributes': dict,
         'override_attributes': dict,
-        'env_run_lists': dict
     }

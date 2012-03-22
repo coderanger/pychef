@@ -4,7 +4,6 @@ import urllib
 
 from chef.api import ChefAPI
 from chef.base import ChefQuery, ChefObject
-from chef.exceptions import ChefError
 
 class SearchRow(dict):
     """A single row in a search result."""

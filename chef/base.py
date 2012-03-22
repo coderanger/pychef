@@ -1,5 +1,7 @@
 import collections
 
+import pkg_resources
+
 from chef.api import ChefAPI, is_version_compatible
 from chef.exceptions import *
 
@@ -29,6 +31,7 @@ class ChefObjectMeta(type):
         super(ChefObjectMeta, cls).__init__(name, bases, d)
         if name != 'ChefObject':
             ChefObject.types[name.lower()] = cls
+        cls.api_version_parsed = pkg_resources.parse_version(cls.api_version)
 
 
 class ChefObject(object):

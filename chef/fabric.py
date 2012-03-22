@@ -8,20 +8,19 @@ class Roledef(object):
         self.api = api
         self.hostname_attr = hostname_attr
         self.environment = environment
-	
-    
+
     def __call__(self):
-        if map(int, self.api.version.split(".")) >= [0, 10]:
+        if map(int, self.api.version.split('.')) >= [0, 10]:
             query = 'roles:%s AND chef_environment:%s' % (self.name, self.environment)
         else:
             query = 'roles:%s' % self.name
 
         for row in Search('node', query, api=self.api):
-	    if row:	
-	            yield row.object.attributes.get_dotted(self.hostname_attr)
+            if row:
+                yield row.object.attributes.get_dotted(self.hostname_attr)
 
 
-def chef_roledefs(api=None, hostname_attr = 'fqdn', environment = "_default"):
+def chef_roledefs(api=None, hostname_attr = 'fqdn', environment = '_default'):
     """Build a Fabric roledef dictionary from a Chef server.
 
     Example:

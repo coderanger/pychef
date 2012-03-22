@@ -11,7 +11,7 @@ setup(
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',
     description = 'Python implementation of a Chef API client.',
-    long_description = open(os.path.join(os.path.dirname(__file__), 'README')).read(),
+    long_description = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     license = 'BSD',
     keywords = '',
     url = 'http://github.com/coderanger/pychef',

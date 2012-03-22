@@ -59,7 +59,7 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
 
-    def __init__(self, url, key, client, version='0.10.4'):
+    def __init__(self, url, key, client, version='0.10.8'):
         self.url = url.rstrip('/')
         self.parsed_url = urlparse.urlparse(self.url)
         if not isinstance(key, Key):

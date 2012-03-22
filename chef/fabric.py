@@ -1,19 +1,19 @@
-from chef import Search
 from chef.api import ChefAPI, autoconfigure
-from chef.exceptions import ChefError
+from chef.environment import Environment
+from chef.exceptions import ChefError, ChefAPIVersionError
+from chef.search import Search
 
 class Roledef(object):
-    def __init__(self, name, api, hostname_attr, environment):
+    def __init__(self, name, api, hostname_attr, environment=None):
         self.name = name
         self.api = api
         self.hostname_attr = hostname_attr
         self.environment = environment
 
     def __call__(self):
-        if map(int, self.api.version.split('.')) >= [0, 10]:
-            query = 'roles:%s AND chef_environment:%s' % (self.name, self.environment)
-        else:
-            query = 'roles:%s' % self.name
+        query = 'roles:%s' % self.name
+        if self.environment:
+            query += ' AND chef_environment:%s' % self.environment
 
         for row in Search('node', query, api=self.api):
             if row:
@@ -42,6 +42,8 @@ def chef_roledefs(api=None, hostname_attr = 'fqdn', environment = '_default'):
     api = api or ChefAPI.get_global() or autoconfigure()
     if not api:
         raise ChefError('Unable to load Chef API configuration')
+    if api.version_parsed < Environment.api_version_parsed and environment is not None:
+        raise ChefAPIVersionError('Environment support requires Chef API 0.10 or greater')
     roledefs = {}
     for row in Search('role', api=api):
         name = row['name']

@@ -43,7 +43,7 @@ class ChefObject(object):
     url = ''
     attributes = {}
 
-    api_version = "0.9"
+    api_version = '0.9'
 
     def __init__(self, name, api=None, skip_load=False):
         self.name = name

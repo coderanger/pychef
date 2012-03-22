@@ -10,7 +10,7 @@ Example
 -------
 
     from chef import autoconfigure, Node
-
+    
     api = autoconfigure()
     n = Node('web1')
     print n['fqdn']

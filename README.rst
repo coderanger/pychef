@@ -1,6 +1,8 @@
 PyChef
 ======
 
+.. image:: https://secure.travis-ci.org/coderanger/pychef.png?branch=master
+
 A Python API for interacting with a Chef server.
 
 Example

@@ -3,10 +3,11 @@
 import os
 
 from setuptools import setup, find_packages
+import versiontools_support
 
 setup(
     name = 'PyChef',
-    version = '0.2',
+    version = ':versiontools:chef',
     packages = find_packages(),
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',

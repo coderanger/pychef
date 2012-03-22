@@ -1,6 +1,6 @@
 # Copyright (c) 2010 Noah Kantrowitz <noah@coderanger.net>
 
-__version__ = (0, 2, 'dev')
+__version__ = (0, 2, 0, 'dev')
 
 from chef.api import ChefAPI, autoconfigure
 from chef.client import Client

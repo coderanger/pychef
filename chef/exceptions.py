@@ -9,6 +9,9 @@ class ChefServerError(ChefError):
     """An error from a Chef server. May include a HTTP response code."""
 
     def __init__(self, message, code=None):
+        self.raw_message = message
+        if isinstance(message, list):
+            message = u', '.join(m for m in message if m)
         super(ChefError, self).__init__(message)
         self.code = code
 

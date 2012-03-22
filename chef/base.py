@@ -48,9 +48,7 @@ class ChefObject(object):
     def __init__(self, name, api=None, skip_load=False):
         self.name = name
         self.api = api or ChefAPI.get_global()
-
-        if self.api_version_parsed > self.api.version_parsed:
-            raise ChefAPIVersionError, "Class %s is not compatible with API version %s" % (self.__class__.__name__, self.api.version)
+        self._check_api_version(self.api)
 
         self.url = self.__class__.url + '/' + self.name
         self.exists = False
@@ -84,6 +82,7 @@ class ChefObject(object):
         """Return a :class:`ChefQuery` with the available objects of this type.
         """
         api = api or ChefAPI.get_global()
+        cls._check_api_version(api)
         names = [name for name, url in api[cls.url].iteritems()]
         return ChefQuery(cls, names, api)
 
@@ -93,6 +92,7 @@ class ChefObject(object):
         attributes as keyword arguments.
         """
         api = api or ChefAPI.get_global()
+        cls._check_api_version(api)
         obj = cls(name, api, skip_load=True)
         for key, value in kwargs.iteritems():
             setattr(obj, key, value)
@@ -131,3 +131,8 @@ class ChefObject(object):
 
     def __repr__(self):
         return '<%s %s>'%(type(self).__name__, self)
+
+    @classmethod
+    def _check_api_version(cls, api):
+        if cls.api_version_parsed > api.version_parsed:
+            raise ChefAPIVersionError, "Class %s is not compatible with API version %s" % (cls.__name__, api.version)

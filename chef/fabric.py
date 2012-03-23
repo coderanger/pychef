@@ -29,7 +29,7 @@ class Roledef(object):
                         except KeyError:
                             continue
                     else:
-                        raise ValueError('Cannot find a usable hostname attribute for node %s', row.object)
+                        raise ChefError('Cannot find a usable hostname attribute for node %s', row.object)
 
 
 def chef_roledefs(api=None, hostname_attr=['cloud.public_hostname', 'fqdn'], environment='_default'):

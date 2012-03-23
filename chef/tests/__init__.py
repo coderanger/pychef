@@ -1,15 +1,36 @@
 import os
 import random
+from functools import wraps
 
+import mock
 from unittest2 import TestCase, skipUnless
 
 from chef.api import ChefAPI
 from chef.exceptions import ChefError
+from chef.search import Search
 
 TEST_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def skipSlowTest():
     return skipUnless(os.environ.get('PYCHEF_SLOW_TESTS'), 'slow tests skipped, set $PYCHEF_SLOW_TESTS=1 to enable')
+
+class mockSearch(object):
+    def __init__(self, search_data):
+        self.search_data = search_data
+
+    def __call__(self, fn):
+        @wraps(fn)
+        def wrapper(inner_self):
+            return mock.patch('chef.search.Search', side_effect=self._search_inst)(fn)(inner_self)
+        return wrapper
+
+    def _search_inst(self, index, q='*:*', *args, **kwargs):
+        data = self.search_data[index, q]
+        if not isinstance(data, dict):
+            data = {'total': len(data), 'rows': data}
+        search = Search(index, q, *args, **kwargs)
+        search._data = data
+        return search
 
 
 def test_chef_api(**kwargs):

@@ -30,6 +30,6 @@ setup(
         'Programming Language :: Python',
     ],
     zip_safe = False,
-    tests_require = ['unittest2'],
+    tests_require = ['unittest2', 'mock'],
     test_suite = 'unittest2.collector',
 )

@@ -1,8 +1,8 @@
 from unittest2 import skip
 
-from chef import Search
+from chef import Search, Node
 from chef.exceptions import ChefError
-from chef.tests import ChefTestCase
+from chef.tests import ChefTestCase, mockSearch
 
 class SearchTestCase(ChefTestCase):
     def test_search_all(self):
@@ -69,3 +69,14 @@ class SearchTestCase(ChefTestCase):
         node = s[0].object
         self.assertEqual(node.name, 'test_1')
         self.assertEqual(node.run_list, ['role[test_1]'])
+
+
+class MockSearchTestCase(ChefTestCase):
+    @mockSearch({
+        ('node', '*:*'): [Node('fake_1', skip_load=True).to_dict()]
+    })
+    def test_single_node(self, MockSearch):
+        import chef.search
+        s = chef.search.Search('node')
+        self.assertEqual(len(s), 1)
+        self.assertIn('fake_1', s)

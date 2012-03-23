@@ -134,5 +134,8 @@ class ChefObject(object):
 
     @classmethod
     def _check_api_version(cls, api):
-        if cls.api_version_parsed > api.version_parsed:
+        # Don't enforce anything if api is None, since there is sometimes a
+        # use for creating Chef objects without an API connection (just for
+        # serialization perhaps).
+        if api and cls.api_version_parsed > api.version_parsed:
             raise ChefAPIVersionError, "Class %s is not compatible with API version %s" % (cls.__name__, api.version)

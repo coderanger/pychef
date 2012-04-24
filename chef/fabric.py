@@ -1,7 +1,23 @@
+from __future__ import absolute_import
+
 from chef.api import ChefAPI, autoconfigure
 from chef.environment import Environment
 from chef.exceptions import ChefError, ChefAPIVersionError
 from chef.search import Search
+
+try:
+    from fabric.api import env, task
+except ImportError, e:
+    env = {}
+    task = lambda *args, **kwargs: lambda fn: fn
+
+__all__ = ['chef_roledefs', 'chef_environment']
+
+# Default environment name
+DEFAULT_ENVIRONMENT = '_default'
+
+# Sentinel object to trigger defered lookup
+_default_environment = object()
 
 class Roledef(object):
     """Represents a Fabric roledef for a Chef role."""
@@ -15,8 +31,11 @@ class Roledef(object):
 
     def __call__(self):
         query = 'roles:%s' % self.name
-        if self.environment:
-            query += ' AND chef_environment:%s' % self.environment
+        environment = self.environment
+        if environment is _default_environment:
+            environment = env.get('chef_environment', DEFAULT_ENVIRONMENT)
+        if environment:
+            query += ' AND chef_environment:%s' % environment
         for row in Search('node', query, api=self.api):
             if row:
                 if callable(self.hostname_attr):
@@ -32,7 +51,7 @@ class Roledef(object):
                         raise ChefError('Cannot find a usable hostname attribute for node %s', row.object)
 
 
-def chef_roledefs(api=None, hostname_attr=['cloud.public_hostname', 'fqdn'], environment='_default'):
+def chef_roledefs(api=None, hostname_attr=['cloud.public_hostname', 'fqdn'], environment=_default_environment):
     """Build a Fabric roledef dictionary from a Chef server.
 
     Example::
@@ -54,7 +73,7 @@ def chef_roledefs(api=None, hostname_attr=['cloud.public_hostname', 'fqdn'], env
     To refer to a nested attribute, separate the levels with '.' e.g. 'ec2.public_hostname'
 
     ``environment`` is the chef environment whose nodes will be fetched. The
-    default environment is '_default'.
+    environment is looked up in the Fabric environment, defaulting to '_default'.
 
     .. versionadded:: 0.1
 
@@ -72,3 +91,39 @@ def chef_roledefs(api=None, hostname_attr=['cloud.public_hostname', 'fqdn'], env
         name = row['name']
         roledefs[name] =  Roledef(name, api, hostname_attr, environment)
     return roledefs
+
+
+@task(alias=env.get('chef_environment_task_alias', 'env'))
+def chef_environment(name, api=None):
+    """A Fabric task to set the current Chef environment context.
+
+    This task works alongside :func:`~chef.fabric.chef_roledefs` to set the
+    Chef environment to be used in future role queries.
+
+    Example::
+
+        from chef.fabric import chef_environment, chef_roledefs
+        env.roledefs = chef_roledefs()
+
+    .. code-block:: bash
+
+        $ fab env:production deploy
+
+    The task can be configured slightly via Fabric ``env`` values.
+
+    ``env.chef_environment_task_alias`` sets the task alias, defaulting to "env".
+    This value must be set **before** :mod:`chef.fabric` is imported.
+
+    ``env.chef_environment_validate`` sets if :class:`~chef.Environment` names
+    should be validated before use. Defaults to True.
+
+    .. versionadded:: 0.2
+    """
+    if env.get('chef_environment_validate', True):
+        api = api or ChefAPI.get_global() or autoconfigure()
+        if not api:
+            raise ChefError('Unable to load Chef API configuration')
+        chef_env = Environment(name, api=api)
+        if not chef_env.exists:
+            raise ChefError('Unknown Chef environment: %s' % name)
+    env['chef_environment'] = name

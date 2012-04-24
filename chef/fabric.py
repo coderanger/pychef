@@ -70,10 +70,18 @@ def chef_roledefs(api=None, hostname_attr=['cloud.public_hostname', 'fqdn'], env
     check in order (the first which exists will be used), or a callable which
     takes a :class:`~chef.Node` and returns the hostname or IP to connect to.
     
-    To refer to a nested attribute, separate the levels with '.' e.g. 'ec2.public_hostname'
+    To refer to a nested attribute, separate the levels with ``'.'`` e.g. ``'ec2.public_hostname'``
 
-    ``environment`` is the chef environment whose nodes will be fetched. The
-    environment is looked up in the Fabric environment, defaulting to '_default'.
+    ``environment`` is the Chef :class:`~chef.Environment` name in which to
+    search for nodes. If set to ``None``, no environment filter is added. If
+    set to a string, it is used verbatim as a filter string. If not passed as
+    an argument at all, the value in the Fabric environment dict is used,
+    defaulting to ``'_default'``.
+
+    .. note::
+
+        ``environment`` must be set to ``None`` if you are emulating Chef API
+        version 0.9 or lower.
 
     .. versionadded:: 0.1
 

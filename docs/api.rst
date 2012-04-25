@@ -19,6 +19,9 @@ Nodes
     :members:
     :inherited-members:
 
+.. autoclass:: chef.node.NodeAttributes
+    :members:
+
 Roles
 -----
 
@@ -34,5 +37,19 @@ Data Bags
     :inherited-members:
 
 .. autoclass :: DataBagItem
+    :members:
+    :inherited-members:
+
+Environments
+------------
+
+.. autoclass :: Environment
+    :members:
+    :inherited-members:
+
+Search
+------
+
+.. autoclass :: Search
     :members:
     :inherited-members:

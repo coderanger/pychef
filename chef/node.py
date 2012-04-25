@@ -1,10 +1,21 @@
 import collections
 
 from chef.base import ChefObject
-from chef.environment import Environment
 from chef.exceptions import ChefError
 
 class NodeAttributes(collections.MutableMapping):
+    """A collection of Chef :class:`~chef.Node` attributes.
+
+    Attributes can be accessed like a normal python :class:`dict`::
+
+        print node['fqdn']
+        node['apache']['log_dir'] = '/srv/log'
+
+    When writing to new attributes, any dicts required in the hierarchy are
+    created automatically.
+
+    .. versionadded:: 0.1
+    """
 
     def __init__(self, search_path=[], path=None, write=None):
         if not isinstance(search_path, collections.Sequence):
@@ -60,14 +71,28 @@ class NodeAttributes(collections.MutableMapping):
         del dest[key]
 
     def has_dotted(self, key):
-      has_key = True
-      try:
-        self.get_dotted(key)
-      except KeyError:
-        has_key = false
-      return has_key
+        """Check if a given dotted key path is present. See :meth:`.get_dotted`
+        for more information on dotted paths.
+
+        .. versionadded:: 0.2
+        """
+        try:
+            self.get_dotted(key)
+        except KeyError:
+            return False
+        else:
+            return True
 
     def get_dotted(self, key):
+        """Retrieve an attribute using a dotted key path. A dotted path
+        is a string of the form `'foo.bar.baz'`, with each `.` separating
+        hierarcy levels.
+
+        Example::
+
+            node.attributes['apache']['log_dir'] = '/srv/log'
+            print node.attributes.get_dotted('apache.log_dir')
+        """
         value = self
         for k in key.split('.'):
             if not isinstance(value, NodeAttributes):
@@ -76,6 +101,13 @@ class NodeAttributes(collections.MutableMapping):
         return value
 
     def set_dotted(self, key, value):
+        """Set an attribute using a dotted key path. See :meth:`.get_dotted`
+        for more information on dotted paths.
+
+        Example::
+
+            node.attributes.set_dotted('apache.log_dir', '/srv/log')
+        """
         dest = self
         keys = key.split('.')
         last_key = keys.pop()
@@ -97,29 +129,63 @@ class NodeAttributes(collections.MutableMapping):
 class Node(ChefObject):
     """A Chef node object.
 
-    .. admonition:: Node attributes
+    The Node object can be used as a dict-like object directly, as an alias for
+    the :attr:`.attributes` data::
 
-        Node attributes can be accessed via the mapping API. This will perform
-        the same merge as Chef, though it will not take roles or other sources
-        of attribute data into account::
+        >>> node = Node('name')
+        >>> node['apache']['log_dir']
+        '/var/log/apache2'
 
-            n = Node('web1')
-            print n['fqdn']
-            n['apache']['log_dir'] = '/srv/log'
+    .. versionadded:: 0.1
 
-        Individual attribute levels ar available on named attributes::
+    .. attribute:: attributes
 
-            n.default['attr']
-            n.normal['attr']
-            n.override['attr']
-            n.automatic['attr']
+        :class:`~chef.node.NodeAttributes` corresponding to the composite of all
+        precedence levels. This only uses the stored data on the Chef server,
+        it does not merge in attributes from roles or environments on its own.
 
-        A helper is available to get and set dotted attribute paths. Note that
-        if one of the attribute keys includes a literal period, this will not
-        work correctly and you must use the mapping API::
+        ::
 
-            n.attributes.get_dotted('apache.log_dir')
-            n.attributes.set_dotted('apache.log_dir', '/srv/log')
+            >>> node.attributes['apache']['log_dir']
+            '/var/log/apache2'
+
+    .. attribute:: run_list
+
+        The run list of the node. This is the unexpanded list in ``type[name]``
+        format.
+
+        ::
+
+            >>> node.run_list
+            ['role[base]', 'role[app]', 'recipe[web]']
+
+    .. attribute:: chef_environment
+
+        The name of the Chef :class:`~chef.Environment` this node is a member
+        of. This value will still be present, even if communicating with a Chef
+        0.9 server, but will be ignored.
+
+        .. versionadded:: 0.2
+
+    .. attribute:: default
+
+        :class:`~chef.node.NodeAttributes` corresponding to the ``default``
+        precedence level.
+
+    .. attribute:: normal
+
+        :class:`~chef.node.NodeAttributes` corresponding to the ``normal``
+        precedence level.
+
+    .. attribute:: override
+
+        :class:`~chef.node.NodeAttributes` corresponding to the ``override``
+        precedence level.
+
+    .. attribute:: automatic
+
+        :class:`~chef.node.NodeAttributes` corresponding to the ``automatic``
+        precedence level.
     """
 
     url = '/nodes'

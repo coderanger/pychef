@@ -1,7 +1,10 @@
 from chef.base import ChefObject
 
 class Environment(ChefObject):
-    """A Chef environment object."""
+    """A Chef environment object.
+
+    .. versionadded:: 0.2
+    """
 
     url = '/environments'
     

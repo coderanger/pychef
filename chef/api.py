@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import socket
+import subprocess
 import threading
 import urllib2
 import urlparse
@@ -20,6 +21,12 @@ from chef.utils.file import walk_backwards
 
 api_stack = threading.local()
 log = logging.getLogger('chef.api')
+
+config_ruby_script = """
+require 'chef'
+Chef::Config.from_file('%s')
+puts Chef::Config.configuration.to_json
+""".strip()
 
 def api_stack_value():
     if not hasattr(api_stack, 'value'):
@@ -108,12 +115,24 @@ class ChefAPI(object):
             elif key == 'node_name':
                 client_name = value
             elif key == 'client_key':
-                # When http://tickets.opscode.com/browse/CHEF-2011 is resolved
-                # there will need to be some post-processing here
                 key_path = value
+                if not os.path.isabs(key_path):
+                    # Relative paths are relative to the config file
+                    key_path = os.path.abspath(os.path.join(os.path.dirname(path), key_path))
         if not url:
-            # No URL, no chance this was valid
-            log.debug('No Chef server URL found')
+            # No URL, no chance this was valid, try running Ruby
+            log.debug('No Chef server URL found, trying Ruby parse')
+            proc = subprocess.Popen('ruby', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            script = config_ruby_script % path.replace('\\', '\\\\').replace("'", "\\'")
+            out, err = proc.communicate(script)
+            if proc.returncode == 0 and out.strip():
+                data = json.loads(out)
+                url = data.get('chef_server_url')
+                client_name = data.get('node_name')
+                key_path = data.get('client_key')
+        if not url:
+            # Still no URL, can't use this config
+            log.debug('Still no Chef server URL found')
             return
         if not key_path:
             # Try and use ./client.pem

@@ -3,11 +3,10 @@
 import os
 
 from setuptools import setup, find_packages
-import versiontools_support
 
 setup(
     name = 'PyChef',
-    version = ':versiontools:chef',
+    version = '0.2.1',
     packages = find_packages(),
     author = 'Noah Kantrowitz',
     author_email = 'noah@coderanger.net',
@@ -19,9 +18,9 @@ setup(
     classifiers = [
         #'Development Status :: 1 - Planning',
         #'Development Status :: 2 - Pre-Alpha',
-        'Development Status :: 3 - Alpha',
+        #'Development Status :: 3 - Alpha',
         #'Development Status :: 4 - Beta',
-        #'Development Status :: 5 - Production/Stable',
+        'Development Status :: 5 - Production/Stable',
         #'Development Status :: 6 - Mature',
         #'Development Status :: 7 - Inactive',
         'License :: OSI Approved :: BSD License',

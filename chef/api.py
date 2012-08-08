@@ -188,13 +188,13 @@ class ChefAPI(object):
         try:
             response = self._request(method, self.url+path, data, dict((k.capitalize(), v) for k, v in request_headers.iteritems()))
         except urllib2.HTTPError, e:
-            err = e.read()
+            e.content = e.read()
             try:
-                err = json.loads(err)
-                raise ChefServerError.from_error(err['error'], code=e.code)
+                e.content = json.loads(e.content)
+                raise ChefServerError.from_error(e.content['error'], code=e.code)
             except ValueError:
                 pass
-            raise
+            raise e
         return response
 
     def api_request(self, method, path, headers={}, data=None):    

@@ -68,7 +68,7 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
 
-    def __init__(self, url, key, client, version='0.10.8'):
+    def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')
         self.parsed_url = urlparse.urlparse(self.url)
         if not isinstance(key, Key):
@@ -76,6 +76,7 @@ class ChefAPI(object):
         self.key = key
         self.client = client
         self.version = version
+        self.headers = dict((k.lower(), v) for k, v in headers.iteritems())
         self.version_parsed = pkg_resources.parse_version(self.version)
         self.platform = self.parsed_url.hostname == 'api.opscode.com'
         if not api_stack_value():
@@ -179,11 +180,13 @@ class ChefAPI(object):
             path=self.parsed_url.path+path.split('?', 1)[0], body=data,
             host=self.parsed_url.netloc, timestamp=datetime.datetime.utcnow(),
             user_id=self.client)
-        headers = dict((k.lower(), v) for k, v in headers.iteritems())
-        headers['x-chef-version'] = self.version
-        headers.update(auth_headers)
+        request_headers = {}
+        request_headers.update(self.headers)
+        request_headers.update(dict((k.lower(), v) for k, v in headers.iteritems()))
+        request_headers['x-chef-version'] = self.version
+        request_headers.update(auth_headers)
         try:
-            response = self._request(method, self.url+path, data, dict((k.capitalize(), v) for k, v in headers.iteritems()))
+            response = self._request(method, self.url+path, data, dict((k.capitalize(), v) for k, v in request_headers.iteritems()))
         except urllib2.HTTPError, e:
             err = e.read()
             try:

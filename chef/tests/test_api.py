@@ -20,8 +20,9 @@ class APITestCase(unittest2.TestCase):
         self.assertEqual(api.client, path)
 
     def test_env_variables(self):
-        username = os.environ.get('LOGNAME')
-        if username is None:
-            self.fail('could not read $LOGNAME from environment')
-        api = self.load('env_values.rb')
-        self.assertEqual(api.client, username)
+        try:
+            os.environ['_PYCHEF_TEST_'] = 'foobar'
+            api = self.load('env_values.rb')
+            self.assertEqual(api.client, 'foobar')
+        finally:
+            del os.environ['_PYCHEF_TEST_']

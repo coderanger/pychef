@@ -18,3 +18,10 @@ class APITestCase(unittest2.TestCase):
         api = self.load('current_dir.rb')
         path = os.path.join(os.path.dirname(__file__), 'configs', 'test_1')
         self.assertEqual(api.client, path)
+
+    def test_env_variables(self):
+        username = os.environ.get('LOGNAME')
+        if username is None:
+            self.fail('could not read $LOGNAME from environment')
+        api = self.load('env_values.rb')
+        self.assertEqual(api.client, username)

@@ -67,6 +67,7 @@ class ChefAPI(object):
     """
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
+    env_value_re = re.compile(r'ENV\[(.+)\]')
 
     def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')
@@ -105,6 +106,10 @@ class ChefAPI(object):
                 expr = match.group(1).strip()
                 if expr == 'current_dir':
                     return os.path.dirname(path)
+                envmatch = cls.env_value_re.match(expr)
+                if envmatch:
+                    envmatch = envmatch.group(1).strip('"').strip("'")
+                    return os.environ.get(envmatch) or ''
                 log.debug('Unknown ruby expression in line "%s"', line)
                 raise UnknownRubyExpression
             try:

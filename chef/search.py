@@ -20,6 +20,8 @@ class SearchRow(dict):
             chef_class = self.get('json_class', '')
             if chef_class.startswith('Chef::'):
                 chef_class = chef_class[6:]
+            if chef_class == 'ApiClient':
+                chef_class = 'Client' # Special case since I don't match the Ruby name.
             cls = ChefObject.types.get(chef_class.lower())
             if not cls:
                 raise ValueError('Unknown class %s'%chef_class)

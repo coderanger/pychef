@@ -117,25 +117,32 @@ class ChefAPI(object):
             except UnknownRubyExpression:
                 continue
             if key == 'chef_server_url':
+                log.debug('Found URL: %r', value)
                 url = value
             elif key == 'node_name':
+                log.debug('Found client name: %r', value)
                 client_name = value
             elif key == 'client_key':
+                log.debug('Found key path: %r', value)
                 key_path = value
                 if not os.path.isabs(key_path):
                     # Relative paths are relative to the config file
                     key_path = os.path.abspath(os.path.join(os.path.dirname(path), key_path))
-        if not url:
+        if not (url and client_name and key_path):
             # No URL, no chance this was valid, try running Ruby
-            log.debug('No Chef server URL found, trying Ruby parse')
+            log.debug('No Chef server config found, trying Ruby parse')
+            url = key_path = client_name = None
             proc = subprocess.Popen('ruby', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             script = config_ruby_script % path.replace('\\', '\\\\').replace("'", "\\'")
             out, err = proc.communicate(script)
             if proc.returncode == 0 and out.strip():
                 data = json.loads(out)
+                log.debug('Ruby parse succeeded with %r', data)
                 url = data.get('chef_server_url')
                 client_name = data.get('node_name')
                 key_path = data.get('client_key')
+            else:
+                log.debug('Ruby parse failed with exit code %s: %s', proc.returncode, out.strip())
         if not url:
             # Still no URL, can't use this config
             log.debug('Still no Chef server URL found')
@@ -202,7 +209,7 @@ class ChefAPI(object):
             raise e
         return response
 
-    def api_request(self, method, path, headers={}, data=None):    
+    def api_request(self, method, path, headers={}, data=None):
         headers = dict((k.lower(), v) for k, v in headers.iteritems())
         headers['accept'] = 'application/json'
         if data is not None:

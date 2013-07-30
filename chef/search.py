@@ -1,6 +1,6 @@
 import collections
 import copy
-import urllib
+import six.moves.urllib.parse
 
 from chef.api import ChefAPI
 from chef.base import ChefQuery, ChefObject
@@ -51,7 +51,7 @@ class Search(collections.Sequence):
         self.name = index
         self.api = api or ChefAPI.get_global()
         self._args = dict(q=q, rows=rows, start=start)
-        self.url = self.__class__.url + '/' + self.name + '?' + urllib.urlencode(self._args)
+        self.url = self.__class__.url + '/' + self.name + '?' + six.moves.urllib.parse.urlencode(self._args)
 
     @property
     def data(self):
@@ -86,7 +86,7 @@ class Search(collections.Sequence):
             if value.step is not None and value.step != 1:
                 raise ValueError('Cannot use a step other than 1')
             return self.start(self._args['start']+value.start).rows(value.stop-value.start)
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return self[self.index(value)]
         row_value = self.data['rows'][value]
         # Check for null rows, just in case
@@ -112,5 +112,5 @@ class Search(collections.Sequence):
     @classmethod
     def list(cls, api=None):
         api = api or ChefAPI.get_global()
-        names = [name for name, url in api[cls.url].iteritems()]
+        names = [name for name, url in api[cls.url].items()]
         return ChefQuery(cls, names, api)

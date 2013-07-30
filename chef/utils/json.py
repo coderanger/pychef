@@ -1,12 +1,13 @@
 from __future__ import absolute_import
 import types
+import collections
 try:
     import json
 except ImportError:
     import simplejson as json
 
 def maybe_call(x):
-    if callable(x):
+    if isinstance(x, collections.Callable):
         return x()
     return x
 

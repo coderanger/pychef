@@ -1,14 +1,16 @@
-import copy
+import six
+
 import datetime
-import itertools
 import logging
 import os
 import re
 import socket
 import subprocess
 import threading
-import urllib2
-import urlparse
+import six.moves.urllib.request
+import six.moves.urllib.error
+import six.moves.urllib.parse
+
 import weakref
 
 import pkg_resources
@@ -28,6 +30,7 @@ Chef::Config.from_file('%s')
 puts Chef::Config.configuration.to_json
 """.strip()
 
+
 def api_stack_value():
     if not hasattr(api_stack, 'value'):
         api_stack.value = []
@@ -35,23 +38,27 @@ def api_stack_value():
 
 
 class UnknownRubyExpression(Exception):
+
     """Token exception for unprocessed Ruby expressions."""
 
 
-class ChefRequest(urllib2.Request):
+class ChefRequest(six.moves.urllib.request.Request):
+
     """Workaround for using PUT/DELETE with urllib2."""
+
     def __init__(self, *args, **kwargs):
         self._method = kwargs.pop('method', None)
         # Request is an old-style class, no super() allowed.
-        urllib2.Request.__init__(self, *args, **kwargs)
+        six.moves.urllib.request.Request.__init__(self, *args, **kwargs)
 
     def get_method(self):
         if self._method:
             return self._method
-        return urllib2.Request.get_method(self)
+        return six.moves.urllib.request.Request.get_method(self)
 
 
 class ChefAPI(object):
+
     """The ChefAPI object is a wrapper for a single Chef server.
 
     .. admonition:: The API stack
@@ -68,16 +75,19 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
     env_value_re = re.compile(r'ENV\[(.+)\]')
+    ruby_string_re = re.compile(r'^\s*(["\'])(.*?)\1\s*$')
 
     def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')
-        self.parsed_url = urlparse.urlparse(self.url)
+        self.parsed_url = six.moves.urllib.parse.urlparse(self.url)
         if not isinstance(key, Key):
             key = Key(key)
+        if not key.key:
+            raise ValueError("ChefAPI attribute 'key' was invalid.")
         self.key = key
         self.client = client
         self.version = version
-        self.headers = dict((k.lower(), v) for k, v in headers.iteritems())
+        self.headers = dict((k.lower(), v) for k, v in headers.items())
         self.version_parsed = pkg_resources.parse_version(self.version)
         self.platform = self.parsed_url.hostname == 'api.opscode.com'
         if not api_stack_value():
@@ -96,12 +106,19 @@ class ChefAPI(object):
         url = key_path = client_name = None
         for line in open(path):
             if not line.strip() or line.startswith('#'):
-                continue # Skip blanks and comments
+                continue  # Skip blanks and comments
             parts = line.split(None, 1)
             if len(parts) != 2:
-                continue # Not a simple key/value, we can't parse it anyway
+                continue  # Not a simple key/value, we can't parse it anyway
             key, value = parts
-            value = value.strip().strip('"\'')
+            md = cls.ruby_string_re.search(value)
+            if md:
+                value = md.group(2)
+            else:
+                # Not a string, don't even try
+                log.debug('Value for %s does not look like a string: %s' % (key, value))
+                continue
+
             def _ruby_value(match):
                 expr = match.group(1).strip()
                 if expr == 'current_dir':
@@ -117,25 +134,32 @@ class ChefAPI(object):
             except UnknownRubyExpression:
                 continue
             if key == 'chef_server_url':
+                log.debug('Found URL: %r', value)
                 url = value
             elif key == 'node_name':
+                log.debug('Found client name: %r', value)
                 client_name = value
             elif key == 'client_key':
+                log.debug('Found key path: %r', value)
                 key_path = value
                 if not os.path.isabs(key_path):
                     # Relative paths are relative to the config file
                     key_path = os.path.abspath(os.path.join(os.path.dirname(path), key_path))
-        if not url:
+        if not (url and client_name and key_path):
             # No URL, no chance this was valid, try running Ruby
-            log.debug('No Chef server URL found, trying Ruby parse')
+            log.debug('No Chef server config found, trying Ruby parse')
+            url = key_path = client_name = None
             proc = subprocess.Popen('ruby', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             script = config_ruby_script % path.replace('\\', '\\\\').replace("'", "\\'")
             out, err = proc.communicate(script)
             if proc.returncode == 0 and out.strip():
                 data = json.loads(out)
+                log.debug('Ruby parse succeeded with %r', data)
                 url = data.get('chef_server_url')
                 client_name = data.get('node_name')
                 key_path = data.get('client_key')
+            else:
+                log.debug('Ruby parse failed with exit code %s: %s', proc.returncode, out.strip())
         if not url:
             # Still no URL, can't use this config
             log.debug('Still no Chef server URL found')
@@ -177,39 +201,42 @@ class ChefAPI(object):
 
     def _request(self, method, url, data, headers):
         # Testing hook, subclass and override for WSGI intercept
+        if six.PY3 and data:
+            data = data.encode()
         request = ChefRequest(url, data, headers, method=method)
-        return urllib2.urlopen(request).read()
+        return six.moves.urllib.request.urlopen(request).read()
 
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
-            path=self.parsed_url.path+path.split('?', 1)[0], body=data,
-            host=self.parsed_url.netloc, timestamp=datetime.datetime.utcnow(),
-            user_id=self.client)
+                                    path=self.parsed_url.path + path.split('?', 1)[0], body=data,
+                                    host=self.parsed_url.netloc, timestamp=datetime.datetime.utcnow(),
+                                    user_id=self.client)
         request_headers = {}
         request_headers.update(self.headers)
-        request_headers.update(dict((k.lower(), v) for k, v in headers.iteritems()))
+        request_headers.update(dict((k.lower(), v) for k, v in headers.items()))
         request_headers['x-chef-version'] = self.version
         request_headers.update(auth_headers)
         try:
-            response = self._request(method, self.url+path, data, dict((k.capitalize(), v) for k, v in request_headers.iteritems()))
-        except urllib2.HTTPError, e:
+            response = self._request(method, self.url + path, data, dict(
+                (k.capitalize(), v) for k, v in request_headers.items()))
+        except six.moves.urllib.error.HTTPError as e:
             e.content = e.read()
             try:
-                e.content = json.loads(e.content)
+                e.content = json.loads(e.content.decode())
                 raise ChefServerError.from_error(e.content['error'], code=e.code)
             except ValueError:
                 pass
             raise e
         return response
 
-    def api_request(self, method, path, headers={}, data=None):    
-        headers = dict((k.lower(), v) for k, v in headers.iteritems())
+    def api_request(self, method, path, headers={}, data=None):
+        headers = dict((k.lower(), v) for k, v in headers.items())
         headers['accept'] = 'application/json'
         if data is not None:
             headers['content-type'] = 'application/json'
             data = json.dumps(data)
         response = self.request(method, path, headers, data)
-        return json.loads(response)
+        return json.loads(response.decode())
 
     def __getitem__(self, path):
         return self.api_request('GET', path)

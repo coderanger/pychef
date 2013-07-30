@@ -27,7 +27,7 @@ class NodeAttributes(collections.MutableMapping):
     def __iter__(self):
         keys = set()
         for d in self.search_path:
-            keys |= set(d.iterkeys())
+            keys |= set(d.keys())
         return iter(keys)
 
     def __len__(self):

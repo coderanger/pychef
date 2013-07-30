@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import functools
 
@@ -6,10 +6,11 @@ from chef.api import ChefAPI, autoconfigure
 from chef.environment import Environment
 from chef.exceptions import ChefError, ChefAPIVersionError
 from chef.search import Search
+import collections
 
 try:
-    from fabric.api import env, task, roles
-except ImportError, e:
+    from fabric.api import env, task, roles, output
+except ImportError as e:
     env = {}
     task = lambda *args, **kwargs: lambda fn: fn
     roles = task
@@ -38,7 +39,7 @@ class Roledef(object):
         self.query = query
         self.api = api
         self.hostname_attr = hostname_attr
-        if isinstance(self.hostname_attr, basestring):
+        if isinstance(self.hostname_attr, str):
             self.hostname_attr = (self.hostname_attr,)
         self.environment = environment
 
@@ -51,15 +52,19 @@ class Roledef(object):
             query += ' AND chef_environment:%s' % environment
         for row in Search('node', query, api=self.api):
             if row:
-                if callable(self.hostname_attr):
-                    yield self.hostname_attr(row.object)
+                if isinstance(self.hostname_attr, collections.Callable):
+                    val = self.hostname_attr(row.object)
+                    if val:
+                        yield val
                 else:
                     for attr in self.hostname_attr:
                         try:
-                            yield row.object.attributes.get_dotted(attr)
-                            break
+                            val =  row.object.attributes.get_dotted(attr)
+                            if val: # Don't ever give out '' or None, since it will error anyway
+                                yield val
+                                break
                         except KeyError:
-                            continue
+                            pass # Move on to the next
                     else:
                         raise ChefError('Cannot find a usable hostname attribute for node %s', row.object)
 
@@ -82,7 +87,7 @@ def chef_roledefs(api=None, hostname_attr=DEFAULT_HOSTNAME_ATTR, environment=_de
     node that holds the hostname or IP to connect to, an array of such keys to
     check in order (the first which exists will be used), or a callable which
     takes a :class:`~chef.Node` and returns the hostname or IP to connect to.
-    
+
     To refer to a nested attribute, separate the levels with ``'.'`` e.g. ``'ec2.public_hostname'``
 
     ``environment`` is the Chef :class:`~chef.Environment` name in which to
@@ -147,6 +152,21 @@ def chef_environment(name, api=None):
 
 
 def chef_query(query, api=None, hostname_attr=DEFAULT_HOSTNAME_ATTR, environment=_default_environment):
+    """A decorator to use an arbitrary Chef search query to find nodes to execute on.
+
+    This is used like Fabric's ``roles()`` decorator, but accepts a Chef search query.
+
+    Example::
+
+        from chef.fabric import chef_query
+
+        @chef_query('roles:web AND tags:active')
+        @task
+        def deploy():
+            pass
+
+    .. versionadded:: 0.2.1
+    """
     api = _api(api)
     if api.version_parsed < Environment.api_version_parsed and environment is not None:
         raise ChefAPIVersionError('Environment support requires Chef API 0.10 or greater')
@@ -156,8 +176,23 @@ def chef_query(query, api=None, hostname_attr=DEFAULT_HOSTNAME_ATTR, environment
 
 
 def chef_tags(*tags, **kwargs):
+    """A decorator to use Chef node tags to find nodes to execute on.
+
+    This is used like Fabric's ``roles()`` decorator, but accepts a list of tags.
+
+    Example::
+
+        from chef.fabric import chef_tags
+
+        @chef_tags('active', 'migrator')
+        @task
+        def migrate():
+            pass
+
+    .. versionadded:: 0.2.1
+    """
     # Allow passing a single iterable
-    if len(tags) == 1 and not isinstance(tags[0], basestring):
+    if len(tags) == 1 and not isinstance(tags[0], str):
         tags = tags[0]
     query = ' AND '.join('tags:%s'%tag.strip() for tag in tags)
     return chef_query(query, **kwargs)

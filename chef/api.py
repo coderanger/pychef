@@ -68,7 +68,7 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
     env_value_re = re.compile(r'ENV\[(.+)\]')
-    ruby_string_re = re.compile(r'^\s*("\')(.*?)\1\s$')
+    ruby_string_re = re.compile(r'^\s*("\')(.*?)\1\s*$')
 
     def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')

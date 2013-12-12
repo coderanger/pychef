@@ -8,7 +8,7 @@ from chef.exceptions import ChefError, ChefAPIVersionError
 from chef.search import Search
 
 try:
-    from fabric.api import env, task, roles
+    from fabric.api import env, task, roles, output
 except ImportError, e:
     env = {}
     task = lambda *args, **kwargs: lambda fn: fn
@@ -56,10 +56,12 @@ class Roledef(object):
                 else:
                     for attr in self.hostname_attr:
                         try:
-                            yield row.object.attributes.get_dotted(attr)
-                            break
+                            val =  row.object.attributes.get_dotted(attr)
+                            if val: # Don't ever give out '' or None, since it will error anyway
+                                yield val
+                                break
                         except KeyError:
-                            continue
+                            pass # Move on to the next
                     else:
                         raise ChefError('Cannot find a usable hostname attribute for node %s', row.object)
 
@@ -82,7 +84,7 @@ def chef_roledefs(api=None, hostname_attr=DEFAULT_HOSTNAME_ATTR, environment=_de
     node that holds the hostname or IP to connect to, an array of such keys to
     check in order (the first which exists will be used), or a callable which
     takes a :class:`~chef.Node` and returns the hostname or IP to connect to.
-    
+
     To refer to a nested attribute, separate the levels with ``'.'`` e.g. ``'ec2.public_hostname'``
 
     ``environment`` is the Chef :class:`~chef.Environment` name in which to

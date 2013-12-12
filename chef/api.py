@@ -68,6 +68,7 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
     env_value_re = re.compile(r'ENV\[(.+)\]')
+    ruby_string_re = re.compile(r'^\s*("\')(.*?)\1\s$')
 
     def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')
@@ -101,7 +102,12 @@ class ChefAPI(object):
             if len(parts) != 2:
                 continue # Not a simple key/value, we can't parse it anyway
             key, value = parts
-            value = value.strip().strip('"\'')
+            md = cls.ruby_string_re.search(value)
+            if md
+                value = md.group(2)
+            else:
+                # Not a string, don't even try
+                continue
             def _ruby_value(match):
                 expr = match.group(1).strip()
                 if expr == 'current_dir':

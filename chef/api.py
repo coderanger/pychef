@@ -68,7 +68,7 @@ class ChefAPI(object):
 
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
     env_value_re = re.compile(r'ENV\[(.+)\]')
-    ruby_string_re = re.compile(r'^\s*("\')(.*?)\1\s*$')
+    ruby_string_re = re.compile(r'^\s*(["\'])(.*?)\1\s*$')
 
     def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')
@@ -107,6 +107,7 @@ class ChefAPI(object):
                 value = md.group(2)
             else:
                 # Not a string, don't even try
+                log.debug('Value for %s does not look like a string: %s'%(key, value))
                 continue
             def _ruby_value(match):
                 expr = match.group(1).strip()

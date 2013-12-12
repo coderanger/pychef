@@ -103,7 +103,7 @@ class ChefAPI(object):
                 continue # Not a simple key/value, we can't parse it anyway
             key, value = parts
             md = cls.ruby_string_re.search(value)
-            if md
+            if md:
                 value = md.group(2)
             else:
                 # Not a string, don't even try

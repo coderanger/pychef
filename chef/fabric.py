@@ -52,7 +52,9 @@ class Roledef(object):
         for row in Search('node', query, api=self.api):
             if row:
                 if callable(self.hostname_attr):
-                    yield self.hostname_attr(row.object)
+                    val = self.hostname_attr(row.object)
+                    if val:
+                        yield val
                 else:
                     for attr in self.hostname_attr:
                         try:

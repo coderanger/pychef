@@ -151,6 +151,21 @@ def chef_environment(name, api=None):
 
 
 def chef_query(query, api=None, hostname_attr=DEFAULT_HOSTNAME_ATTR, environment=_default_environment):
+    """A decorator to use an arbitrary Chef search query to find nodes to execute on.
+
+    This is used like Fabric's ``roles()`` decorator, but accepts a Chef search query.
+
+    Example::
+
+        from chef.fabric import chef_query
+
+        @chef_query('roles:web AND tags:active')
+        @task
+        def deploy():
+            pass
+
+    .. versionadded:: 0.2.1
+    """
     api = _api(api)
     if api.version_parsed < Environment.api_version_parsed and environment is not None:
         raise ChefAPIVersionError('Environment support requires Chef API 0.10 or greater')
@@ -160,6 +175,21 @@ def chef_query(query, api=None, hostname_attr=DEFAULT_HOSTNAME_ATTR, environment
 
 
 def chef_tags(*tags, **kwargs):
+    """A decorator to use Chef node tags to find nodes to execute on.
+
+    This is used like Fabric's ``roles()`` decorator, but accepts a list of tags.
+
+    Example::
+
+        from chef.fabric import chef_tags
+
+        @chef_tags('active', 'migrator')
+        @task
+        def migrate():
+            pass
+
+    .. versionadded:: 0.2.1
+    """
     # Allow passing a single iterable
     if len(tags) == 1 and not isinstance(tags[0], basestring):
         tags = tags[0]

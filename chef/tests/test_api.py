@@ -26,3 +26,9 @@ class APITestCase(unittest2.TestCase):
             self.assertEqual(api.client, 'foobar')
         finally:
             del os.environ['_PYCHEF_TEST_']
+
+    def test_bad_key_raises(self):
+        invalids = [None, '']
+        for item in invalids:
+            self.assertRaises(
+                ValueError, ChefAPI, 'foobar', item, 'user')

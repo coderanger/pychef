@@ -75,6 +75,8 @@ class ChefAPI(object):
         self.parsed_url = urlparse.urlparse(self.url)
         if not isinstance(key, Key):
             key = Key(key)
+        if not key.key:
+            raise ValueError("ChefAPI attribute 'key' was invalid.")
         self.key = key
         self.client = client
         self.version = version

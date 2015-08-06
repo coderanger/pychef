@@ -25,7 +25,7 @@ class Acl(object):
         for t in self.ace_types:
             self.attributes_map[t] = Permissions()
 
-        if not skip_load:
+        if (not skip_load) and self.is_supported():
             self.reload()
 
     @property

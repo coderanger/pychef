@@ -1,6 +1,7 @@
 import collections
 
 import pkg_resources
+from chef.acl import Acl
 
 from chef.api import ChefAPI
 from chef.exceptions import *
@@ -139,3 +140,6 @@ class ChefObject(object):
         # serialization perhaps).
         if api and cls.api_version_parsed > api.version_parsed:
             raise ChefAPIVersionError, "Class %s is not compatible with API version %s" % (cls.__name__, api.version)
+
+    def get_acl(self):
+        return Acl(self.__class__.url.strip('/'), self.name, self.api)

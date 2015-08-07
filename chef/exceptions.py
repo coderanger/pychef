@@ -35,6 +35,3 @@ class ChefAPIVersionError(ChefError):
 class ChefObjectTypeError(ChefError):
     """An invalid object type error"""
 
-
-class ChefObjectNameError(ChefError):
-    """An invalid object name error"""

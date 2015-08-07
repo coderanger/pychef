@@ -1,11 +1,96 @@
 import pkg_resources
 from chef.api import ChefAPI
-from chef.exceptions import ChefObjectTypeError, ChefObjectNameError
+from chef.exceptions import ChefObjectTypeError
 from chef.permissions import Permissions
 
 
 class Acl(object):
-    """Represents an ACL rules for the chef objects."""
+    """
+    Acl class provides access to the Acl in the Chef 12
+
+        Acl(object_type, name, api, skip_load=False)
+
+        - object_type - type of the Chef object. Can be one of the following value: "clients", "containers", "cookbooks",
+            "data", "environments", "groups", "nodes", "roles"
+        - name - name of the Chef object (e.g. node name)
+        - api - object of the ChefAPI class, configured to work with Chef server
+        - skip_load - is skip_load is False, new object will be initialized with current Acl settings of the specified
+            object
+
+        Example::
+
+            from chef import ChefAPI
+            from chef.acl import Acl
+
+            api = ChefAPI('http://chef.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            acl = Acl('nodes', 'i-022fcb0d', api)
+
+        Each object of the Acl class contains the following properties:
+            create, read, update, delete, grant
+        each property represents corresponding access rights to the Chef object.
+        each property contains the following fields (https://github.com/astryia/pychef/blob/acls/chef/permissions.py):
+        - actors - list of the users, which have corresponding permissions
+        - groups - list of the groups, which have corresponding permissions
+
+        Example::
+
+            print acl.update.groups
+            >>> ['admins', 'clients']
+
+        Each object of the class Acl contains the following methods:
+        - reload() - reload current Acls from the Chef server
+        - save() - save updated Acl object to the Chef server
+        - is_supported() - return true if current Api version supports work with Acls
+
+        Example::
+
+            from chef import ChefAPI
+            from chef.acl import Acl
+
+            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            acl = Acl('nodes', 'i-022fcb0d', api)
+            print acl.update.groups
+            >>> ['admins']
+            acl.update.groups.append('clients')
+            acl.save()
+            acl.reload()
+            print acl.update.groups
+            >>> ['admins', 'clients']
+
+        Each class which represents Chef object contains method get_acl() method
+
+        Example::
+
+            from chef import ChefAPI
+            from chef.node import Node
+
+            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            node = Node('i-022fcb0d', api)
+            acl = node.get_acl()
+            print acl.read.groups
+            >>> ['admins']
+            acl.save()
+
+        Note about versions
+        Chef server with version < 12 doesn't have Acl endpoint, so, I've introduced method is_supported() for Acl class.
+        This method check if api version is greater than 12.
+        So you should pass valid Chef server version to the ChefAPI constructor
+
+        Example::
+
+            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            acl = Acl('nodes', 'i-022fcb0d', api)
+            print acl.is_supported()
+            >>> True
+
+            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '11.2.0')
+            acl = Acl('nodes', 'i-022fcb0d', api)
+            print acl.is_supported()
+            >>> False
+
+        But if you pass string '12.0.0' when actual Chef server version is 11.2, you will receive an error when you try
+        to build Acl object.
+    """
 
     ace_types = ["create", "read", "update", "delete", "grant"]
     object_types = ["clients", "containers", "cookbooks", "data", "environments", "groups", "nodes", "roles"]

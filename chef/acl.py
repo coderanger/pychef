@@ -47,7 +47,7 @@ class Acl(object):
             from chef import ChefAPI
             from chef.acl import Acl
 
-            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            api = ChefAPI('http://chef.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
             acl = Acl('nodes', 'i-022fcb0d', api)
             print acl.update.groups
             >>> ['admins']
@@ -64,7 +64,7 @@ class Acl(object):
             from chef import ChefAPI
             from chef.node import Node
 
-            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            api = ChefAPI('http://chef.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
             node = Node('i-022fcb0d', api)
             acl = node.get_acl()
             print acl.read.groups
@@ -78,12 +78,12 @@ class Acl(object):
 
         Example::
 
-            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
+            api = ChefAPI('http://chef.com:4000', 'chef-developer.pem', 'chef-developer', '12.0.0')
             acl = Acl('nodes', 'i-022fcb0d', api)
             print acl.is_supported()
             >>> True
 
-            api = ChefAPI('http://chef.aws.infongen.com:4000', 'chef-developer.pem', 'chef-developer', '11.2.0')
+            api = ChefAPI('http://chef.com:4000', 'chef-developer.pem', 'chef-developer', '11.2.0')
             acl = Acl('nodes', 'i-022fcb0d', api)
             print acl.is_supported()
             >>> False

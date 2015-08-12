@@ -17,7 +17,7 @@ class APITestCase(unittest2.TestCase):
     def test_current_dir(self):
         api = self.load('current_dir.rb')
         path = os.path.join(os.path.dirname(__file__), 'configs', 'test_1')
-        self.assertEqual(api.client, path)
+        self.assertEqual(os.path.normpath(api.client), path)
 
     def test_env_variables(self):
         try:

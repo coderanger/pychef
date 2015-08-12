@@ -12,7 +12,7 @@ class Client(ChefObject):
         if self.platform:
             self.orgname = data.get('orgname')
             self.validator = bool(data.get('validator', False))
-            self.public_key = data.get('certificate')
+            self.public_key = data.get('public_key')
             self.admin = False
         else:
             self.admin = bool(data.get('admin', False))
@@ -31,7 +31,7 @@ class Client(ChefObject):
             d.update({
                 'orgname': self.orgname,
                 'validator': self.validator,
-                'certificate': self.certificate,
+                'public_key': self.certificate,
                 'clientname': self.name,
             })
         else:
@@ -48,6 +48,7 @@ class Client(ChefObject):
         obj.admin = admin
         d = api.api_request('POST', cls.url, data=obj)
         obj.private_key = d['private_key']
+        obj.public_key = d['public_key']
         return obj
 
     def rekey(self, api=None):

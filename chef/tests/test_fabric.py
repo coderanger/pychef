@@ -18,9 +18,9 @@ class FabricTestCase(ChefTestCase):
                 search_mock_inst.data = data
             return search_mock_inst
         MockSearch.side_effect = search_mock
-        print MockSearch('role').data
+        print(MockSearch('role').data)
         
 
     @mockSearch({('role', '*:*'): {1:2}})
     def test_roledef2(self, MockSearch):
-        print MockSearch('role').data
+        print(MockSearch('role').data)

@@ -1,3 +1,4 @@
+import six.moves
 import os
 import random
 from functools import wraps
@@ -50,12 +51,12 @@ class ChefTestCase(TestCase):
         for obj in self.objects:
             try:
                 obj.delete()
-            except ChefError, e:
-                print e
+            except ChefError as e:
+                print(e)
                 # Continue running
 
     def register(self, obj):
         self.objects.append(obj)
 
     def random(self, length=8, alphabet='0123456789abcdef'):
-        return ''.join(random.choice(alphabet) for _ in xrange(length))
+        return ''.join(random.choice(alphabet) for _ in six.moves.range(length))

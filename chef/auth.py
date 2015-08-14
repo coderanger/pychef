@@ -1,3 +1,4 @@
+import six.moves
 import base64
 import datetime
 import hashlib
@@ -8,19 +9,19 @@ def _ruby_b64encode(value):
     into 60-character chunks.
     """
     b64 = base64.b64encode(value)
-    for i in xrange(0, len(b64), 60):
-        yield b64[i:i+60]
+    for i in six.moves.range(0, len(b64), 60):
+        yield b64[i:i + 60].decode()
 
 def ruby_b64encode(value):
     return '\n'.join(_ruby_b64encode(value))
 
 def sha1_base64(value):
     """An implementation of Mixlib::Authentication::Digester."""
-    return ruby_b64encode(hashlib.sha1(value).digest())
+    return ruby_b64encode(hashlib.sha1(value.encode()).digest())
 
 class UTC(datetime.tzinfo):
     """UTC timezone stub."""
-    
+
     ZERO = datetime.timedelta(0)
 
     def utcoffset(self, dt):
@@ -63,7 +64,7 @@ def sign_request(key, http_method, path, body, host, timestamp, user_id):
     """Generate the needed headers for the Opscode authentication protocol."""
     timestamp = canonical_time(timestamp)
     hashed_body = sha1_base64(body or '')
-    
+
     # Simple headers
     headers = {
         'x-ops-sign': 'version=1.0',
@@ -71,7 +72,7 @@ def sign_request(key, http_method, path, body, host, timestamp, user_id):
         'x-ops-timestamp': timestamp,
         'x-ops-content-hash': hashed_body,
     }
-    
+
     # Create RSA signature
     req = canonical_request(http_method, path, hashed_body, timestamp, user_id)
     sig = _ruby_b64encode(key.private_encrypt(req))

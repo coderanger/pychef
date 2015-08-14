@@ -10,7 +10,7 @@ class DataBagTestCase(ChefTestCase):
 
     def test_keys(self):
         bag = DataBag('test_1')
-        self.assertItemsEqual(bag.keys(), ['item_1', 'item_2'])
+        self.assertItemsEqual(list(bag.keys()), ['item_1', 'item_2'])
         self.assertItemsEqual(iter(bag), ['item_1', 'item_2'])
 
     def test_item(self):

@@ -1,3 +1,4 @@
+import six
 import collections
 
 from chef.base import ChefObject
@@ -27,7 +28,7 @@ class NodeAttributes(collections.MutableMapping):
     def __iter__(self):
         keys = set()
         for d in self.search_path:
-            keys |= set(d.iterkeys())
+            keys |= set(six.iterkeys(d))
         return iter(keys)
 
     def __len__(self):

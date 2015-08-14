@@ -1,3 +1,4 @@
+import six
 import abc
 import collections
 
@@ -9,7 +10,7 @@ class DataBagMeta(ChefObjectMeta, abc.ABCMeta):
     """A metaclass to allow DataBag to use multiple inheritance."""
 
 
-class DataBag(ChefObject, ChefQuery):
+class DataBag(six.with_metaclass(DataBagMeta, ChefObject, ChefQuery)):
     """A Chef data bag object.
 
     Data bag items are available via the mapping API. Evaluation works in the
@@ -18,28 +19,24 @@ class DataBag(ChefObject, ChefQuery):
 
         bag = DataBag('versions')
         item = bag['web']
-        for name, item in bag.iteritems():
+        for name, item in six.iteritems(bag):
             print item['qa_version']
     """
-
-    __metaclass__ = DataBagMeta
 
     url = '/data'
 
     def _populate(self, data):
-        self.names = data.keys()
+        self.names = list(data.keys())
 
     def obj_class(self, name, api):
         return DataBagItem(self, name, api=api)
 
 
-class DataBagItem(ChefObject, collections.MutableMapping):
+class DataBagItem(six.with_metaclass(DataBagMeta, ChefObject, collections.MutableMapping)):
     """A Chef data bag item object.
 
     Data bag items act as normal dicts and can contain arbitrary data.
     """
-
-    __metaclass__ = DataBagMeta
 
     url = '/data'
     attributes = {
@@ -99,7 +96,7 @@ class DataBagItem(ChefObject, collections.MutableMapping):
         keyword arguments."""
         api = api or ChefAPI.get_global()
         obj = cls(bag, name, api, skip_load=True)
-        for key, value in kwargs.iteritems():
+        for key, value in six.iteritems(kwargs):
             obj[key] = value
         obj['id'] = name
         api.api_request('POST', cls.url+'/'+str(bag), data=obj.raw_data)
@@ -117,5 +114,5 @@ class DataBagItem(ChefObject, collections.MutableMapping):
         self['id'] = self.name
         try:
             api.api_request('PUT', self.url, data=self.raw_data)
-        except ChefServerNotFoundError, e:
+        except ChefServerNotFoundError as e:
             api.api_request('POST', self.__class__.url+'/'+str(self._bag), data=self.raw_data)

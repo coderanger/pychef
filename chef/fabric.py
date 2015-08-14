@@ -1,12 +1,10 @@
-
-
+import six
 import functools
 
 from chef.api import ChefAPI, autoconfigure
 from chef.environment import Environment
 from chef.exceptions import ChefError, ChefAPIVersionError
 from chef.search import Search
-import collections
 
 try:
     from fabric.api import env, task, roles, output
@@ -39,7 +37,7 @@ class Roledef(object):
         self.query = query
         self.api = api
         self.hostname_attr = hostname_attr
-        if isinstance(self.hostname_attr, str):
+        if isinstance(self.hostname_attr, six.string_types):
             self.hostname_attr = (self.hostname_attr,)
         self.environment = environment
 
@@ -52,7 +50,7 @@ class Roledef(object):
             query += ' AND chef_environment:%s' % environment
         for row in Search('node', query, api=self.api):
             if row:
-                if isinstance(self.hostname_attr, collections.Callable):
+                if callable(self.hostname_attr):
                     val = self.hostname_attr(row.object)
                     if val:
                         yield val
@@ -192,7 +190,7 @@ def chef_tags(*tags, **kwargs):
     .. versionadded:: 0.2.1
     """
     # Allow passing a single iterable
-    if len(tags) == 1 and not isinstance(tags[0], str):
+    if len(tags) == 1 and not isinstance(tags[0], six.string_types):
         tags = tags[0]
     query = ' AND '.join('tags:%s'%tag.strip() for tag in tags)
     return chef_query(query, **kwargs)

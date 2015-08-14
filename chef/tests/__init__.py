@@ -1,3 +1,4 @@
+import six.moves
 import os
 import random
 from functools import wraps
@@ -58,4 +59,4 @@ class ChefTestCase(TestCase):
         self.objects.append(obj)
 
     def random(self, length=8, alphabet='0123456789abcdef'):
-        return ''.join(random.choice(alphabet) for _ in range(length))
+        return ''.join(random.choice(alphabet) for _ in six.moves.range(length))

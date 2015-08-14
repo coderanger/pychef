@@ -1,5 +1,4 @@
 import six
-
 import datetime
 import logging
 import os
@@ -10,7 +9,6 @@ import threading
 import six.moves.urllib.request
 import six.moves.urllib.error
 import six.moves.urllib.parse
-
 import weakref
 
 import pkg_resources
@@ -30,7 +28,6 @@ Chef::Config.from_file('%s')
 puts Chef::Config.configuration.to_json
 """.strip()
 
-
 def api_stack_value():
     if not hasattr(api_stack, 'value'):
         api_stack.value = []
@@ -38,14 +35,11 @@ def api_stack_value():
 
 
 class UnknownRubyExpression(Exception):
-
     """Token exception for unprocessed Ruby expressions."""
 
 
 class ChefRequest(six.moves.urllib.request.Request):
-
     """Workaround for using PUT/DELETE with urllib2."""
-
     def __init__(self, *args, **kwargs):
         self._method = kwargs.pop('method', None)
         # Request is an old-style class, no super() allowed.
@@ -58,7 +52,6 @@ class ChefRequest(six.moves.urllib.request.Request):
 
 
 class ChefAPI(object):
-
     """The ChefAPI object is a wrapper for a single Chef server.
 
     .. admonition:: The API stack
@@ -87,7 +80,7 @@ class ChefAPI(object):
         self.key = key
         self.client = client
         self.version = version
-        self.headers = dict((k.lower(), v) for k, v in headers.items())
+        self.headers = dict((k.lower(), v) for k, v in six.iteritems(headers))
         self.version_parsed = pkg_resources.parse_version(self.version)
         self.platform = self.parsed_url.hostname == 'api.opscode.com'
         if not api_stack_value():
@@ -106,19 +99,18 @@ class ChefAPI(object):
         url = key_path = client_name = None
         for line in open(path):
             if not line.strip() or line.startswith('#'):
-                continue  # Skip blanks and comments
+                continue # Skip blanks and comments
             parts = line.split(None, 1)
             if len(parts) != 2:
-                continue  # Not a simple key/value, we can't parse it anyway
+                continue # Not a simple key/value, we can't parse it anyway
             key, value = parts
             md = cls.ruby_string_re.search(value)
             if md:
                 value = md.group(2)
             else:
                 # Not a string, don't even try
-                log.debug('Value for %s does not look like a string: %s' % (key, value))
+                log.debug('Value for {0} does not look like a string: {1}'.format(key, value))
                 continue
-
             def _ruby_value(match):
                 expr = match.group(1).strip()
                 if expr == 'current_dir':
@@ -208,17 +200,17 @@ class ChefAPI(object):
 
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
-                                    path=self.parsed_url.path + path.split('?', 1)[0], body=data,
-                                    host=self.parsed_url.netloc, timestamp=datetime.datetime.utcnow(),
-                                    user_id=self.client)
+            path=self.parsed_url.path+path.split('?', 1)[0], body=data,
+            host=self.parsed_url.netloc, timestamp=datetime.datetime.utcnow(),
+            user_id=self.client)
         request_headers = {}
         request_headers.update(self.headers)
-        request_headers.update(dict((k.lower(), v) for k, v in headers.items()))
+        request_headers.update(dict((k.lower(), v) for k, v in six.iteritems(headers)))
         request_headers['x-chef-version'] = self.version
         request_headers.update(auth_headers)
         try:
             response = self._request(method, self.url + path, data, dict(
-                (k.capitalize(), v) for k, v in request_headers.items()))
+                (k.capitalize(), v) for k, v in six.iteritems(request_headers)))
         except six.moves.urllib.error.HTTPError as e:
             e.content = e.read()
             try:
@@ -230,7 +222,7 @@ class ChefAPI(object):
         return response
 
     def api_request(self, method, path, headers={}, data=None):
-        headers = dict((k.lower(), v) for k, v in headers.items())
+        headers = dict((k.lower(), v) for k, v in six.iteritems(headers))
         headers['accept'] = 'application/json'
         if data is not None:
             headers['content-type'] = 'application/json'

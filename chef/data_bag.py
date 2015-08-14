@@ -19,7 +19,7 @@ class DataBag(six.with_metaclass(DataBagMeta, ChefObject, ChefQuery)):
 
         bag = DataBag('versions')
         item = bag['web']
-        for name, item in bag.iteritems():
+        for name, item in six.iteritems(bag):
             print item['qa_version']
     """
 
@@ -96,7 +96,7 @@ class DataBagItem(six.with_metaclass(DataBagMeta, ChefObject, collections.Mutabl
         keyword arguments."""
         api = api or ChefAPI.get_global()
         obj = cls(bag, name, api, skip_load=True)
-        for key, value in kwargs.items():
+        for key, value in six.iteritems(kwargs):
             obj[key] = value
         obj['id'] = name
         api.api_request('POST', cls.url+'/'+str(bag), data=obj.raw_data)

@@ -1,3 +1,4 @@
+import six
 import collections
 import copy
 import six.moves.urllib.parse
@@ -86,7 +87,7 @@ class Search(collections.Sequence):
             if value.step is not None and value.step != 1:
                 raise ValueError('Cannot use a step other than 1')
             return self.start(self._args['start']+value.start).rows(value.stop-value.start)
-        if isinstance(value, str):
+        if isinstance(value, six.string_types):
             return self[self.index(value)]
         row_value = self.data['rows'][value]
         # Check for null rows, just in case
@@ -112,5 +113,5 @@ class Search(collections.Sequence):
     @classmethod
     def list(cls, api=None):
         api = api or ChefAPI.get_global()
-        names = [name for name, url in api[cls.url].items()]
+        names = [name for name, url in six.iteritems(api[cls.url])]
         return ChefQuery(cls, names, api)

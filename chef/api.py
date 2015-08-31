@@ -1,4 +1,3 @@
-import six
 import datetime
 import logging
 import os
@@ -6,12 +5,12 @@ import re
 import socket
 import subprocess
 import threading
-import six.moves.urllib.request
-import six.moves.urllib.error
-import six.moves.urllib.parse
 import weakref
+import six
 
 import pkg_resources
+
+import requests
 
 from chef.auth import sign_request
 from chef.exceptions import ChefServerError
@@ -38,19 +37,6 @@ class UnknownRubyExpression(Exception):
     """Token exception for unprocessed Ruby expressions."""
 
 
-class ChefRequest(six.moves.urllib.request.Request):
-    """Workaround for using PUT/DELETE with urllib2."""
-    def __init__(self, *args, **kwargs):
-        self._method = kwargs.pop('method', None)
-        # Request is an old-style class, no super() allowed.
-        six.moves.urllib.request.Request.__init__(self, *args, **kwargs)
-
-    def get_method(self):
-        if self._method:
-            return self._method
-        return six.moves.urllib.request.Request.get_method(self)
-
-
 class ChefAPI(object):
     """The ChefAPI object is a wrapper for a single Chef server.
 
@@ -69,6 +55,8 @@ class ChefAPI(object):
     ruby_value_re = re.compile(r'#\{([^}]+)\}')
     env_value_re = re.compile(r'ENV\[(.+)\]')
     ruby_string_re = re.compile(r'^\s*(["\'])(.*?)\1\s*$')
+
+    verify_ssl = True
 
     def __init__(self, url, key, client, version='0.10.8', headers={}):
         self.url = url.rstrip('/')
@@ -192,11 +180,8 @@ class ChefAPI(object):
         del api_stack_value()[-1]
 
     def _request(self, method, url, data, headers):
-        # Testing hook, subclass and override for WSGI intercept
-        if six.PY3 and data:
-            data = data.encode()
-        request = ChefRequest(url, data, headers, method=method)
-        return six.moves.urllib.request.urlopen(request).read()
+        request = requests.api.request(method, url, headers=headers, data=data, verify=self.verify_ssl)
+        return request
 
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
@@ -228,13 +213,13 @@ class ChefAPI(object):
             headers['content-type'] = 'application/json'
             data = json.dumps(data)
         response = self.request(method, path, headers, data)
-        return json.loads(response.decode())
+        return response.json()
 
     def __getitem__(self, path):
         return self.api_request('GET', path)
 
 
-def autoconfigure(base_path=None):
+def autoconfigure(base_path=None, verify_ssl=True):
     """Try to find a knife or chef-client config file to load parameters from,
     starting from either the given base path or the current working directory.
 
@@ -253,16 +238,19 @@ def autoconfigure(base_path=None):
         config_path = os.path.join(path, '.chef', 'knife.rb')
         api = ChefAPI.from_config_file(config_path)
         if api is not None:
+            api.verify_ssl = verify_ssl
             return api
 
     # The walk didn't work, try ~/.chef/knife.rb
     config_path = os.path.expanduser(os.path.join('~', '.chef', 'knife.rb'))
     api = ChefAPI.from_config_file(config_path)
     if api is not None:
+        api.verify_ssl = verify_ssl
         return api
 
     # Nothing in the home dir, try /etc/chef/client.rb
     config_path = os.path.join(os.path.sep, 'etc', 'chef', 'client.rb')
     api = ChefAPI.from_config_file(config_path)
     if api is not None:
+        api.verify_ssl = verify_ssl
         return api

@@ -56,9 +56,7 @@ class ChefAPI(object):
     env_value_re = re.compile(r'ENV\[(.+)\]')
     ruby_string_re = re.compile(r'^\s*(["\'])(.*?)\1\s*$')
 
-    verify_ssl = True
-
-    def __init__(self, url, key, client, version='0.10.8', headers={}):
+    def __init__(self, url, key, client, version='0.10.8', headers={}, ssl_verify=True):
         self.url = url.rstrip('/')
         self.parsed_url = six.moves.urllib.parse.urlparse(self.url)
         if not isinstance(key, Key):
@@ -71,6 +69,7 @@ class ChefAPI(object):
         self.headers = dict((k.lower(), v) for k, v in six.iteritems(headers))
         self.version_parsed = pkg_resources.parse_version(self.version)
         self.platform = self.parsed_url.hostname == 'api.opscode.com'
+        self.ssl_verify = ssl_verify
         if not api_stack_value():
             self.set_default()
 
@@ -85,6 +84,7 @@ class ChefAPI(object):
             log.debug('Unable to read config file "%s"', path)
             return
         url = key_path = client_name = None
+        ssl_verify = True
         for line in open(path):
             if not line.strip() or line.startswith('#'):
                 continue # Skip blanks and comments
@@ -95,6 +95,10 @@ class ChefAPI(object):
             md = cls.ruby_string_re.search(value)
             if md:
                 value = md.group(2)
+            elif key == 'ssl_verify_mode':
+                log.debug('Found ssl_verify_mode: %r', value)
+                ssl_verify = (value.strip() != ':verify_none')
+                log.debug('ssl_verify = %s', ssl_verify)
             else:
                 # Not a string, don't even try
                 log.debug('Value for {0} does not look like a string: {1}'.format(key, value))
@@ -125,6 +129,7 @@ class ChefAPI(object):
                 if not os.path.isabs(key_path):
                     # Relative paths are relative to the config file
                     key_path = os.path.abspath(os.path.join(os.path.dirname(path), key_path))
+
         if not (url and client_name and key_path):
             # No URL, no chance this was valid, try running Ruby
             log.debug('No Chef server config found, trying Ruby parse')
@@ -153,7 +158,7 @@ class ChefAPI(object):
             return
         if not client_name:
             client_name = socket.getfqdn()
-        return cls(url, key_path, client_name)
+        return cls(url, key_path, client_name, ssl_verify=ssl_verify)
 
     @staticmethod
     def get_global():
@@ -180,7 +185,7 @@ class ChefAPI(object):
         del api_stack_value()[-1]
 
     def _request(self, method, url, data, headers):
-        request = requests.api.request(method, url, headers=headers, data=data, verify=self.verify_ssl)
+        request = requests.api.request(method, url, headers=headers, data=data, verify=self.ssl_verify)
         return request
 
     def request(self, method, path, headers={}, data=None):
@@ -219,7 +224,7 @@ class ChefAPI(object):
         return self.api_request('GET', path)
 
 
-def autoconfigure(base_path=None, verify_ssl=True):
+def autoconfigure(base_path=None):
     """Try to find a knife or chef-client config file to load parameters from,
     starting from either the given base path or the current working directory.
 
@@ -238,19 +243,16 @@ def autoconfigure(base_path=None, verify_ssl=True):
         config_path = os.path.join(path, '.chef', 'knife.rb')
         api = ChefAPI.from_config_file(config_path)
         if api is not None:
-            api.verify_ssl = verify_ssl
             return api
 
     # The walk didn't work, try ~/.chef/knife.rb
     config_path = os.path.expanduser(os.path.join('~', '.chef', 'knife.rb'))
     api = ChefAPI.from_config_file(config_path)
     if api is not None:
-        api.verify_ssl = verify_ssl
         return api
 
     # Nothing in the home dir, try /etc/chef/client.rb
     config_path = os.path.join(os.path.sep, 'etc', 'chef', 'client.rb')
     api = ChefAPI.from_config_file(config_path)
     if api is not None:
-        api.verify_ssl = verify_ssl
         return api

@@ -1,4 +1,3 @@
-import six
 import datetime
 import logging
 import os
@@ -6,12 +5,12 @@ import re
 import socket
 import subprocess
 import threading
-import six.moves.urllib.request
-import six.moves.urllib.error
-import six.moves.urllib.parse
 import weakref
+import six
 
 import pkg_resources
+
+import requests
 
 from chef.auth import sign_request
 from chef.exceptions import ChefServerError
@@ -38,19 +37,6 @@ class UnknownRubyExpression(Exception):
     """Token exception for unprocessed Ruby expressions."""
 
 
-class ChefRequest(six.moves.urllib.request.Request):
-    """Workaround for using PUT/DELETE with urllib2."""
-    def __init__(self, *args, **kwargs):
-        self._method = kwargs.pop('method', None)
-        # Request is an old-style class, no super() allowed.
-        six.moves.urllib.request.Request.__init__(self, *args, **kwargs)
-
-    def get_method(self):
-        if self._method:
-            return self._method
-        return six.moves.urllib.request.Request.get_method(self)
-
-
 class ChefAPI(object):
     """The ChefAPI object is a wrapper for a single Chef server.
 
@@ -70,7 +56,7 @@ class ChefAPI(object):
     env_value_re = re.compile(r'ENV\[(.+)\]')
     ruby_string_re = re.compile(r'^\s*(["\'])(.*?)\1\s*$')
 
-    def __init__(self, url, key, client, version='0.10.8', headers={}):
+    def __init__(self, url, key, client, version='0.10.8', headers={}, ssl_verify=True):
         self.url = url.rstrip('/')
         self.parsed_url = six.moves.urllib.parse.urlparse(self.url)
         if not isinstance(key, Key):
@@ -83,6 +69,7 @@ class ChefAPI(object):
         self.headers = dict((k.lower(), v) for k, v in six.iteritems(headers))
         self.version_parsed = pkg_resources.parse_version(self.version)
         self.platform = self.parsed_url.hostname == 'api.opscode.com'
+        self.ssl_verify = ssl_verify
         if not api_stack_value():
             self.set_default()
 
@@ -97,6 +84,7 @@ class ChefAPI(object):
             log.debug('Unable to read config file "%s"', path)
             return
         url = key_path = client_name = None
+        ssl_verify = True
         for line in open(path):
             if not line.strip() or line.startswith('#'):
                 continue # Skip blanks and comments
@@ -107,6 +95,10 @@ class ChefAPI(object):
             md = cls.ruby_string_re.search(value)
             if md:
                 value = md.group(2)
+            elif key == 'ssl_verify_mode':
+                log.debug('Found ssl_verify_mode: %r', value)
+                ssl_verify = (value.strip() != ':verify_none')
+                log.debug('ssl_verify = %s', ssl_verify)
             else:
                 # Not a string, don't even try
                 log.debug('Value for {0} does not look like a string: {1}'.format(key, value))
@@ -137,6 +129,7 @@ class ChefAPI(object):
                 if not os.path.isabs(key_path):
                     # Relative paths are relative to the config file
                     key_path = os.path.abspath(os.path.join(os.path.dirname(path), key_path))
+
         if not (url and client_name and key_path):
             # No URL, no chance this was valid, try running Ruby
             log.debug('No Chef server config found, trying Ruby parse')
@@ -165,7 +158,7 @@ class ChefAPI(object):
             return
         if not client_name:
             client_name = socket.getfqdn()
-        return cls(url, key_path, client_name)
+        return cls(url, key_path, client_name, ssl_verify=ssl_verify)
 
     @staticmethod
     def get_global():
@@ -192,11 +185,8 @@ class ChefAPI(object):
         del api_stack_value()[-1]
 
     def _request(self, method, url, data, headers):
-        # Testing hook, subclass and override for WSGI intercept
-        if six.PY3 and data:
-            data = data.encode()
-        request = ChefRequest(url, data, headers, method=method)
-        return six.moves.urllib.request.urlopen(request).read()
+        request = requests.api.request(method, url, headers=headers, data=data, verify=self.ssl_verify)
+        return request
 
     def request(self, method, path, headers={}, data=None):
         auth_headers = sign_request(key=self.key, http_method=method,
@@ -228,7 +218,7 @@ class ChefAPI(object):
             headers['content-type'] = 'application/json'
             data = json.dumps(data)
         response = self.request(method, path, headers, data)
-        return json.loads(response.decode())
+        return response.json()
 
     def __getitem__(self, path):
         return self.api_request('GET', path)

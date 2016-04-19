@@ -5,8 +5,6 @@ from ctypes.util import find_library
 
 if sys.platform == 'win32' or sys.platform == 'cygwin':
     _eay = CDLL('libeay32.dll')
-elif sys.platform == 'darwin':
-    _eay = CDLL('libcrypto.dylib')
 else:
     _eay = CDLL(find_library('crypto'))
 

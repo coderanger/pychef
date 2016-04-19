@@ -1,7 +1,7 @@
 import six
 import sys
 from ctypes import *
-from ctypes.utils import find_library
+from ctypes.util import find_library
 
 if sys.platform == 'win32' or sys.platform == 'cygwin':
     _eay = CDLL('libeay32.dll')

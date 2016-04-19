@@ -203,11 +203,10 @@ class ChefAPI(object):
         except requests.ConnectionError as e:
             raise ChefServerError(e.message)
 
-        if response.ok:
-            return response
+        if not response.ok:
+            raise ChefServerError.from_error(response.reason, code=response.status_code)
 
-        raise ChefServerError.from_error(response.reason, code=response.status_code)
-
+        return response
 
     def api_request(self, method, path, headers={}, data=None):
         headers = dict((k.lower(), v) for k, v in six.iteritems(headers))

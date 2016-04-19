@@ -7,7 +7,13 @@ if sys.platform == 'win32' or sys.platform == 'cygwin':
 elif sys.platform == 'darwin':
     _eay = CDLL('libcrypto.dylib')
 else:
-    _eay = CDLL('libcrypto.so')
+    # Patch for Amazon Linux
+    import platform
+    plat_name = platform.linux_distribution(supported_dists=['system'])[0]
+    if 'Amazon' in plat_name:
+        _eay = CDLL('libcrypto.so.10')
+    else:
+        _eay = CDLL('libcrypto.so')
 
 #unsigned long ERR_get_error(void);
 ERR_get_error = _eay.ERR_get_error

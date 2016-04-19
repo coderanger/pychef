@@ -201,15 +201,14 @@ class ChefAPI(object):
         try:
             response = self._request(method, self.url + path, data, dict(
                 (k.capitalize(), v) for k, v in six.iteritems(request_headers)))
-        except six.moves.urllib.error.HTTPError as e:
-            e.content = e.read()
-            try:
-                e.content = json.loads(e.content.decode())
-                raise ChefServerError.from_error(e.content['error'], code=e.code)
-            except ValueError:
-                pass
-            raise e
-        return response
+        except requests.ConnectionError as e:
+            raise ChefServerError(e.message)
+
+        if response.ok:
+            return response
+
+        raise ChefServerError.from_error(response.reason, code=response.status_code)
+
 
     def api_request(self, method, path, headers={}, data=None):
         headers = dict((k.lower(), v) for k, v in six.iteritems(headers))

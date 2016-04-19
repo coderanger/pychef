@@ -1,19 +1,14 @@
 import six
 import sys
 from ctypes import *
+from ctypes.utils import find_library
 
 if sys.platform == 'win32' or sys.platform == 'cygwin':
     _eay = CDLL('libeay32.dll')
 elif sys.platform == 'darwin':
     _eay = CDLL('libcrypto.dylib')
 else:
-    # Patch for Amazon Linux
-    import platform
-    plat_name = platform.linux_distribution(supported_dists=['system'])[0]
-    if 'Amazon' in plat_name:
-        _eay = CDLL('libcrypto.so.10')
-    else:
-        _eay = CDLL('libcrypto.so')
+    _eay = CDLL(find_library('crypto'))
 
 #unsigned long ERR_get_error(void);
 ERR_get_error = _eay.ERR_get_error

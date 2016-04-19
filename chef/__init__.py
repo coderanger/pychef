@@ -10,3 +10,4 @@ from chef.node import Node
 from chef.role import Role
 from chef.environment import Environment
 from chef.search import Search
+from chef.acl import Acl

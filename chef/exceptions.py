@@ -1,6 +1,7 @@
 # Exception hierarchy for chef
 # Copyright (c) 2010 Noah Kantrowitz <noah@coderanger.net>
 
+
 class ChefError(Exception):
     """Top-level Chef error."""
 
@@ -29,3 +30,8 @@ class ChefServerNotFoundError(ChefServerError):
 
 class ChefAPIVersionError(ChefError):
     """An incompatible API version error"""
+
+
+class ChefObjectTypeError(ChefError):
+    """An invalid object type error"""
+

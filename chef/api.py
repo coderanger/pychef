@@ -136,9 +136,9 @@ class ChefAPI(object):
             url = key_path = client_name = None
             proc = subprocess.Popen('ruby', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             script = config_ruby_script % path.replace('\\', '\\\\').replace("'", "\\'")
-            out, err = proc.communicate(script)
+            out, err = proc.communicate(script.encode())
             if proc.returncode == 0 and out.strip():
-                data = json.loads(out)
+                data = json.loads(out.decode())
                 log.debug('Ruby parse succeeded with %r', data)
                 url = data.get('chef_server_url')
                 client_name = data.get('node_name')

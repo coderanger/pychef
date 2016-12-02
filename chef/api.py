@@ -136,13 +136,16 @@ class ChefAPI(object):
             url = key_path = client_name = None
             proc = subprocess.Popen('ruby', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             script = config_ruby_script % path.replace('\\', '\\\\').replace("'", "\\'")
-            out, err = proc.communicate(script)
+            out, err = proc.communicate(script.encode())
             if proc.returncode == 0 and out.strip():
-                data = json.loads(out)
+                data = json.loads(out.decode())
                 log.debug('Ruby parse succeeded with %r', data)
                 url = data.get('chef_server_url')
                 client_name = data.get('node_name')
                 key_path = data.get('client_key')
+                if key_path and not os.path.isabs(key_path):
+                    # Relative paths are relative to the config file
+                    key_path = os.path.abspath(os.path.join(os.path.dirname(path), key_path))
             else:
                 log.debug('Ruby parse failed with exit code %s: %s', proc.returncode, out.strip())
         if not url:

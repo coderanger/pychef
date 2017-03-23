@@ -1,1 +1,2 @@
 include versiontools_support.py
+include LICENSE
